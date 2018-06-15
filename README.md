@@ -17,6 +17,8 @@ of `redux-saga` and wanted to test my async/await/generator functions it would r
 mocking/intercepting HTTP requests which is a terrible developer experience after
 coming from describing side-effects as data.
 
+[Effects as Data talk by Richard Feldman](https://www.youtube.com/watch?v=6EdXaWfoslc)
+
 ## How?
 
 `sead` will work exactly like `co` with the exception that it can handle a new
