@@ -3,17 +3,18 @@ const fetch = require('node-fetch');
 const assert = require('assert');
 const test = require('tape');
 const nock = require('nock');
+const genTester = require('gen-tester');
 
 const noop = () => {};
 
 function* genCall() {
   const resp = yield call(fetch, 'http://httpbin.org/get');
   const data = yield call([resp, 'json']);
-  return data;
+  return { ...data, extra: 'stuff' };
 }
 
 test('task runner', (t) => {
-  const mockData = { one: 2 };
+  const mockData = { one: 2, extra: 'stuff' };
 
   nock('http://httpbin.org')
     .get('/get')
@@ -28,33 +29,29 @@ test('task runner', (t) => {
 });
 
 test('call effect', (t) => {
-  const gen = genCall();
-
-  t.plan(4);
-
-  t.deepEqual(
-    gen.next().value,
-    call(fetch, 'http://httpbin.org/get'),
-    'should make http request',
-  );
+  t.plan(1);
 
   const respValue = { resp: 'value', json: 'hi' };
-  t.deepEqual(
-    gen.next(respValue).value,
+  const returnValue = { data: 'value', extra: 'stuff' };
+  const actual = genTester({
+    generator: genCall,
+    yields: [
+      respValue,
+      { data: 'value' },
+    ],
+  });
+  const expected = [
+    call(fetch, 'http://httpbin.org/get'),
     call([respValue, 'json']),
-    'should get json from response',
-  );
+    returnValue,
+  ];
 
-  const last = gen.next({ data: 'value' });
-  t.ok(last.done, 'generator should finish');
-  t.deepEqual(
-    last.value,
-    { data: 'value' },
-    'should return data',
-  );
+  t.deepEqual(actual, expected);
 });
 
 test('all effect', (t) => {
+  t.plan(1);
+
   const effectOne = noop;
   const effectTwo = noop;
   function* genAll() {
@@ -65,54 +62,44 @@ test('all effect', (t) => {
 
     return res;
   }
-  const gen = genAll();
-
-  t.plan(3);
-
-  t.deepEqual(
-    gen.next().value,
+  const allVal = [{ one: true }, { two: true }];
+  const actual = genTester({
+    generator: genAll,
+    yields: [
+      allVal,
+    ],
+  });
+  const expected = [
     all([
       call(effectOne, 'one'),
       call(effectTwo, 'two'),
     ]),
-    'should call all effects in parralel',
-  );
-
-  const allVal = [{ one: true }, { two: true }];
-  const last = gen.next(allVal);
-  t.ok(last.done, 'generator should finish');
-  t.deepEqual(
-    last.value,
     allVal,
-    'should return data',
-  );
+  ];
+
+  t.deepEqual(actual, expected);
 });
 
 test('spawn effect', (t) => {
+  t.plan(1);
+
   function* effect() {}
   function* genSpawn(val) {
     yield spawn(effect, val);
     return 'DONE';
   }
-
   const val = 'value';
-  const gen = genSpawn(val);
-
-  t.plan(3);
-
-  t.deepEqual(
-    gen.next().value,
+  const actual = genTester({
+    generator: genSpawn,
+    args: [val],
+    yields: [null],
+  });
+  const expected = [
     spawn(effect, val),
-    'should call spawn effect',
-  );
-
-  const last = gen.next();
-  t.ok(last.done, 'generator should finish');
-  t.deepEqual(
-    last.value,
     'DONE',
-    'should return data',
-  );
+  ];
+
+  t.deepEqual(actual, expected);
 });
 
 /* function* example() {
@@ -124,4 +111,5 @@ test('spawn effect', (t) => {
   return data;
 }
 
-task(example).then(console.log); */
+task(example).then(console.log);
+*/
