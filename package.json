@@ -1,8 +1,11 @@
 {
-  "name": "task",
+  "name": "co-task",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "test": "tape test.js"
+  },
   "devDependencies": {
     "nock": "^9.3.3",
     "node-fetch": "^2.1.2",
