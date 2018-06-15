@@ -1,4 +1,4 @@
-# co-task [![Build Status](https://travis-ci.org/neurosnap/co-task.svg?branch=master)](https://travis-ci.org/neurosnap/co-task)
+# sead [![Build Status](https://travis-ci.org/neurosnap/sead.svg?branch=master)](https://travis-ci.org/neurosnap/sead)
 
 Fork of [co](https://github.com/tj/co) that describes asynchronous tasks as data.
 
@@ -19,7 +19,7 @@ coming from describing side-effects as data.
 
 ## How?
 
-`co-task` will work exactly like `co` with the exception that it can handle a new
+`sead` will work exactly like `co` with the exception that it can handle a new
 yielded value type: effect objects. An effect object looks something like this:
 
 ```json
@@ -35,7 +35,7 @@ Right now there are three different effects this library implements: `call`, `sp
 `task` is an alias for the `co` function.
 
 ```js
-import { call, task } from 'co-task';
+import { call, task } from 'sead';
 
 function* fetchBin() {
   const resp = yield call(fetch, 'http://httpbin.org/get');
@@ -100,7 +100,7 @@ Manages async flow for a generator.  This is an alias to the `co` function.
 ### call
 
 ```js
-const { task, call } = require('co-task');
+const { task, call } = require('sead');
 const fetch = require('node-fetch');
 
 function* example() {
@@ -117,7 +117,7 @@ Uses `Promise.all` to execute effects in parallel.  Could be an array of effects
 or an object of effects.
 
 ```js
-const { task, call, all } = require('co-task');
+const { task, call, all } = require('sead');
 const fetch = require('node-fetch');
 
 function* example() {
@@ -137,7 +137,7 @@ task(example);
 Spawns an effect without the generator waiting for that effect to finish.
 
 ```js
-const { task, spawn } = require('co-task');
+const { task, spawn } = require('sead');
 const fetch = require('node-fetch');
 
 function effect() {
