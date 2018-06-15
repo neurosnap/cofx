@@ -45,7 +45,7 @@ function* fetchBin() {
   // this is required because of the way fetch uses context to determine if the Body
   // promise has been used already.
   const data = yield call([resp, 'json']);
-  return data;
+  return { ...data, extra: 'stuff' };
 }
 
 task(fetchBin)
@@ -80,9 +80,37 @@ test('test fetchBin', (t) => {
   t.ok(last.done, 'generator should finish');
   t.deepEqual(
     last.value,
-    { data: 'value' },
+    { data: 'value', extra: 'stuff' },
     'should return data',
   );
+});
+```
+
+Using a little helper library called [gen-tester](https://github.com/neurosnap/gen-tester)
+we can make this even easier.
+
+```js
+const genTester = require('gen-tester');
+
+test('test fetchBin', (t) => {
+  t.plan(1);
+
+  const respValue = { resp: 'value', json: 'hi' };
+  const returnValue = { data: 'value', extra: 'stuff' };
+  const actual = genTester({
+    generator: genCall,
+    yields: [
+      respValue, // the result value of `resp` in the generator
+      { data: 'value' }, // the result value of `data` in the generator
+    ],
+  });
+  const expected = [
+    call(fetch, 'http://httpbin.org/get'),
+    call([respValue, 'json']),
+    returnValue,
+  ];
+
+  t.deepEqual(actual, expected);
 });
 ```
 
