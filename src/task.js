@@ -50,7 +50,7 @@ const spawn = (fn, ...args) => ({ type: SPAWN, fn, args });
 const isSpawn = typeDetector(SPAWN);
 function spawnEffect({ fn, args }) {
   return new Promise((resolve, reject) => {
-    toPromise(fn.call(this, ...args), task).then(noop);
+    toPromise(fn.call(this, ...args)).then(noop);
     resolve();
   });
 }
