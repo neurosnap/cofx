@@ -32,8 +32,6 @@ yielded value type: effect objects. An effect object looks something like this:
 }
 ```
 
-Right now there are three different effects this library implements: `call`, `spawn`, `all`
-
 `task` is an alias for the `co` function.
 
 ```js
@@ -52,6 +50,8 @@ task(fetchBin)
   .then(console.log)
   .catch(console.error);
 ```
+
+Check out the API section for more effects.
 
 ## Testing
 
@@ -188,4 +188,55 @@ task(example);
 // COOL
 // ... five seconds later
 // ACTIVATE
+```
+
+### delay
+
+This will `sleep` the generator for the designated amount of time.
+
+```js
+const { task, delay } = require('sead');
+
+function* example() {
+  console.log('INIT')
+  yield delay(1000);
+  console.log('END');
+}
+
+task(example);
+// INIT
+// ... one second later
+// END
+```
+
+### factory
+
+This is what creates `task`.  This allows end-developers to build their own
+effect middleware.  When using middleware it must return a promise, something that `co` understands how to handle, and
+to allow other middleware to handle the effect as well, you
+must return `next(effect)`;
+
+```js
+const { factory } = require('sead');
+
+const ERROR = 'ERROR';
+const error = (msg) => ({ type: ERROR, msg });
+const middleware = (next) => (effect) => {
+  if (effect.type === ERROR) {
+    return Promise.reject(effect.msg);
+  }
+
+  return next(effect);
+};
+
+function* example() {
+  yield error('SOMETHING HAPPENED');
+}
+
+const customTask = factory(middleware);
+customTask(example).catch((err) => {
+  console.log(`ERROR: ${err}`);
+});
+
+// ERROR: SOMETHING HAPPENED
 ```

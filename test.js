@@ -1,4 +1,4 @@
-const { task, call, all, spawn } = require('./index');
+const { task, call, all, spawn, delay, factory } = require('./index');
 const fetch = require('node-fetch');
 const assert = require('assert');
 const test = require('tape');
@@ -13,7 +13,7 @@ function* genCall() {
   return { ...data, extra: 'stuff' };
 }
 
-test('task runner', (t) => {
+test('task runtime', (t) => {
   const mockData = { one: 2, extra: 'stuff' };
 
   nock('http://httpbin.org')
@@ -26,6 +26,21 @@ test('task runner', (t) => {
   }
 
   task(genCall).then(assertData);
+});
+
+test('task runtime call generator', (t) => {
+  function* one() {
+    return 'hi';
+  }
+  function* two() {
+    const val = yield call(one);
+    return val;
+  }
+
+  t.plan(1);
+  task(two).then((data) => {
+    t.equal(data, 'hi');
+  }).catch(console.error);
 });
 
 test('call effect', (t) => {
@@ -93,13 +108,59 @@ test('spawn effect', (t) => {
   t.deepEqual(actual, expected);
 });
 
-/* function* example() {
+test('delay effect', (t) => {
+  t.plan(1);
+
+  function* genDelay() {
+    yield delay(1000);
+    return 'DONE';
+  }
+  const val = 'value';
+  const tester = genTester(genDelay);
+  const actual = tester([null]);
+  const expected = [
+    delay(1000),
+    'DONE',
+  ];
+
+  t.deepEqual(actual, expected);
+});
+
+test('custom middleware', (t) => {
+  t.plan(1);
+
+  const middleware = (next) => (effect) => {
+    if (effect.type === 'CUSTOM_EFFECT') {
+      t.ok(true, 'must rech this branch');
+      return Promise.resolve();
+    }
+
+    return next(effect);
+  }
+
+  const customEffect = () => ({ type: 'CUSTOM_EFFECT' });
+  function* genCustom() {
+    yield customEffect();
+  }
+
+  const customTask = factory(middleware);
+  customTask(genCustom);
+});
+
+/* function* sp() {
+  const resp = yield call(fetch, 'http://httpbin.org/get');
+  const json = yield call([resp, 'json']);
+  console.log(json);
+}
+
+function* example() {
   const resp = yield all([
     call(fetch, 'http://httpbin.org/get'),
     call(fetch, 'http://httpbin.org/get'),
   ]);
   const data = yield all(resp.map((r) => call([r, 'json'])));
-  return data;
+  yield spawn(sp);
+  // return data;
 }
 
 task(example).then(console.log);
