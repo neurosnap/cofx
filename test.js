@@ -33,13 +33,11 @@ test('call effect', (t) => {
 
   const respValue = { resp: 'value', json: 'hi' };
   const returnValue = { data: 'value', extra: 'stuff' };
-  const actual = genTester({
-    generator: genCall,
-    yields: [
-      respValue,
-      { data: 'value' },
-    ],
-  });
+  const tester = genTester(genCall)
+  const actual = tester([
+    respValue,
+    { data: 'value' },
+  ]);
   const expected = [
     call(fetch, 'http://httpbin.org/get'),
     call([respValue, 'json']),
@@ -63,12 +61,8 @@ test('all effect', (t) => {
     return res;
   }
   const allVal = [{ one: true }, { two: true }];
-  const actual = genTester({
-    generator: genAll,
-    yields: [
-      allVal,
-    ],
-  });
+  const tester = genTester(genAll);
+  const actual = tester([allVal]);
   const expected = [
     all([
       call(effectOne, 'one'),
@@ -89,11 +83,8 @@ test('spawn effect', (t) => {
     return 'DONE';
   }
   const val = 'value';
-  const actual = genTester({
-    generator: genSpawn,
-    args: [val],
-    yields: [null],
-  });
+  const tester = genTester(genSpawn, val);
+  const actual = tester([null]);
   const expected = [
     spawn(effect, val),
     'DONE',

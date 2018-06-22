@@ -7,7 +7,7 @@
     "test": "tape test.js"
   },
   "devDependencies": {
-    "gen-tester": "^1.0.0",
+    "gen-tester": "^2.0.0",
     "nock": "^9.3.3",
     "node-fetch": "^2.1.2",
     "tape": "^4.9.1"

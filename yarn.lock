@@ -99,9 +99,9 @@ function-bind@^1.0.2, function-bind@^1.1.1, function-bind@~1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
 
-gen-tester@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/gen-tester/-/gen-tester-1.0.0.tgz#20f3931734b5bd75f1fecbea90da7ab4b41e7032"
+gen-tester@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/gen-tester/-/gen-tester-2.0.0.tgz#2f880ef4415484b3163c21b4b2bdb2f807bd84f7"
 
 get-func-name@^2.0.0:
   version "2.0.0"
