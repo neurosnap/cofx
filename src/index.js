@@ -1,7 +1,16 @@
-const { task, call, all, spawn } = require('./task');
+const { effectMiddleware, call, all, spawn, delay } = require('./effect');
+const factoryBase = require('./factory');
+
+const task = factoryBase(effectMiddleware);
+const factory = (...middleware) =>
+  factoryBase.apply(this, [...middleware, effectMiddleware]);
+
 module.exports = {
-  task,
-  call,
   all,
+  call,
+  delay,
+  factory,
+  factoryBase,
   spawn,
+  task,
 };
