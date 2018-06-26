@@ -1,4 +1,4 @@
-const { task, call, all, spawn, delay, factory } = require('./index');
+const { task, call, all, spawn, delay, factory } = require('..');
 const fetch = require('node-fetch');
 const assert = require('assert');
 const test = require('tape');

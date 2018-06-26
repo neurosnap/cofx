@@ -1,15 +1,25 @@
 {
   "name": "sead",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "tape test.js"
+    "test": "tape 'test/**/*.js' | tap-dot",
+    "precommit": "lint-staged"
   },
   "devDependencies": {
     "gen-tester": "^2.0.0",
+    "husky": "^0.14.3",
+    "lint-staged": "^7.2.0",
+    "mz": "^2.7.0",
     "nock": "^9.3.3",
     "node-fetch": "^2.1.2",
+    "prettier": "1.13.6",
+    "tap-dot": "^2.0.0",
     "tape": "^4.9.1"
+  },
+  "dependencies": {},
+  "lint-staged": {
+    "*.{js}": ["prettier --write", "git add"]
   }
 }
