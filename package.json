@@ -4,14 +4,15 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "tape 'test/**/*.js'"
+    "test": "tape 'test/**/*.js' | tap-dot"
   },
   "devDependencies": {
     "gen-tester": "^2.0.0",
     "mz": "^2.7.0",
     "nock": "^9.3.3",
     "node-fetch": "^2.1.2",
-    "tape": "^4.9.1"
+    "tape": "^4.9.1",
+    "tap-dot": "^2.0.0"
   },
   "dependencies": {}
 }
