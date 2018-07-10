@@ -1,8 +1,9 @@
 {
-  "name": "sead",
+  "name": "co-ed",
   "version": "1.1.0",
   "main": "index.js",
   "license": "MIT",
+  "description": "co effects as data",
   "scripts": {
     "test": "tape 'test/**/*.js' | tap-dot",
     "precommit": "lint-staged"
