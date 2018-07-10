@@ -1,4 +1,4 @@
-# co-ed [![Build Status](https://travis-ci.org/neurosnap/co-ed.svg?branch=master)](https://travis-ci.org/neurosnap/co-ed)
+# cosed [![Build Status](https://travis-ci.org/neurosnap/cosed.svg?branch=master)](https://travis-ci.org/neurosnap/cosed)
 
 Fork of [co](https://github.com/tj/co) that describes asynchronous tasks as data.
 
@@ -21,7 +21,7 @@ coming from describing side-effects as data.
 
 ## How?
 
-`co-ed` will work exactly like `co` with the exception that it can handle a new
+`cosed` will work exactly like `co` with the exception that it can handle a new
 yielded value type: effect objects. An effect object looks something like this:
 
 ```json
@@ -35,7 +35,7 @@ yielded value type: effect objects. An effect object looks something like this:
 `task` is an alias for the `co` function.
 
 ```js
-import { call, task } from 'co-ed';
+import { call, task } from 'cosed';
 
 function* fetchBin() {
   const resp = yield call(fetch, 'http://httpbin.org/get');
@@ -130,7 +130,7 @@ Manages async flow for a generator.  This is an alias to the `co` function.
 ### call
 
 ```js
-const { task, call } = require('co-ed');
+const { task, call } = require('cosed');
 const fetch = require('node-fetch');
 
 function* example() {
@@ -147,7 +147,7 @@ Uses `Promise.all` to execute effects in parallel.  Could be an array of effects
 or an object of effects.
 
 ```js
-const { task, call, all } = require('co-ed');
+const { task, call, all } = require('cosed');
 const fetch = require('node-fetch');
 
 function* example() {
@@ -167,7 +167,7 @@ task(example);
 Spawns an effect without the generator waiting for that effect to finish.
 
 ```js
-const { task, spawn } = require('co-ed');
+const { task, spawn } = require('cosed');
 const fetch = require('node-fetch');
 
 function effect() {
@@ -195,7 +195,7 @@ task(example);
 This will `sleep` the generator for the designated amount of time.
 
 ```js
-const { task, delay } = require('co-ed');
+const { task, delay } = require('cosed');
 
 function* example() {
   console.log('INIT')
@@ -217,7 +217,7 @@ to allow other middleware to handle the effect as well, you
 must return `next(effect)`;
 
 ```js
-const { factory } = require('co-ed');
+const { factory } = require('cosed');
 
 const ERROR = 'ERROR';
 const error = (msg) => ({ type: ERROR, msg });
