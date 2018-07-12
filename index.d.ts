@@ -24,7 +24,7 @@ declare module 'cosed' {
   type Promisify = (p: any) => Promise<any>;
   type Middleware = (next: NextFn) => (effect: Effect, promisify: Promisify) => Middleware;
 
-  export function task(fn: CoFn): Promise<any>;
+  export function task(fn: CoFn, ...args: any[]): Promise<any>;
   export function call(fn: Fn, ...args: any[]): CallEffect;
   export function all(effects: Effect[]): AllEffect;
   export function delay(ms: number): DelayEffect;
