@@ -1,7 +1,7 @@
 declare module 'cosed' {
-  export type CoFn = Iterator<any>;
+  export type CoFn = () => any;
   export type TaskFn = (fn: CoFn, ...args: any[]) => Promise<any>;
-  export type Fn = (...args: any[]) => any;
+  export type Fn = () => any;
   export interface CallEffect {
     type: 'CALL';
     fn: Fn;
