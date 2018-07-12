@@ -1,5 +1,6 @@
 declare module 'cosed' {
   export type CoFn = Iterator<any>;
+  export type TaskFn = (fn: CoFn, ...args: any[]) => Promise<any>;
   export type Fn = (...args: any[]) => void | Iterator<any>;
   export interface CallEffect {
     type: 'CALL';
@@ -28,7 +29,7 @@ declare module 'cosed' {
   export function call(fn: Fn, ...args: any[]): CallEffect;
   export function all(effects: Effect[]): AllEffect;
   export function delay(ms: number): DelayEffect;
-  export function factory(...args: Middleware[]): (fn: CoFn) => Promise<any>;
+  export function factory(...args: Middleware[]): TaskFn;
   export function factoryBase(...args: Middleware[]): any;
   export function spawn(fn: Fn, ...args: any[]): any;
 }
