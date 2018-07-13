@@ -90,25 +90,26 @@ Using a little helper library called [gen-tester](https://github.com/neurosnap/g
 we can make this even easier.
 
 ```js
-const genTester = require('gen-tester');
+const { genTester, yields } = require('gen-tester');
 
 test('test fetchBin', (t) => {
   t.plan(1);
 
   const respValue = { resp: 'value', json: 'hi' };
   const returnValue = { data: 'value', extra: 'stuff' };
-  const actual = genTester({
-    generator: genCall,
-    yields: [
+
+  const tester = genTester(genCall);
+  const { actual, expect } = tester(
+    yields(
+      call(fetch, 'http://httpbin.org/get'),
       respValue, // the result value of `resp` in the generator
+    ),
+    yields(
+      call([respValue, 'json']),
       { data: 'value' }, // the result value of `data` in the generator
-    ],
-  });
-  const expected = [
-    call(fetch, 'http://httpbin.org/get'),
-    call([respValue, 'json']),
+    ),
     returnValue,
-  ];
+  );
 
   t.deepEqual(actual, expected);
 });
