@@ -21,9 +21,9 @@ declare module 'cosed' {
     effects: Effect[];
   }
   export type Effect = { type: string } & { [key: string]: any };
-  type NextFn = () => Middleware;
-  type Promisify = (p: any) => Promise<any>;
-  type Middleware = (next: NextFn) => (effect: Effect, promisify: Promisify) => Middleware;
+  export type NextFn = (...args: any[]) => Middleware;
+  export type Promisify = (p: any) => Promise<any>;
+  export type Middleware = (next: NextFn) => (effect: Effect, promisify: Promisify) => Middleware;
 
   export function task(fn: CoFn, ...args: any[]): Promise<any>;
   export function call(fn: Fn, ...args: any[]): CallEffect;
