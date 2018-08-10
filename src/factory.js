@@ -44,20 +44,19 @@ function factoryBase(...middleware) {
         var promise = promisify.call(this, obj[key]);
         if (promise && isPromise(promise)) {
           defer(promise, key);
-        }
-        else results[key] = obj[key];
+        } else results[key] = obj[key];
       }
 
-      return Promise
-        .all(promises)
-        .then(() => results);
+      return Promise.all(promises).then(() => results);
 
       function defer(promise, key) {
         // predefine the key in the result
         results[key] = undefined;
-        promises.push(promise.then((res) => {
-          results[key] = res;
-        }));
+        promises.push(
+          promise.then((res) => {
+            results[key] = res;
+          }),
+        );
       }
     }
 
@@ -112,18 +111,20 @@ function factoryBase(...middleware) {
 
         const taskValue = applyMiddleware(middleware)(value, promisify);
         const promiseValue = promisify.call(ctx, taskValue);
-
         if (promiseValue && isPromise(promiseValue)) {
           return promiseValue.then(onFulfilled, onRejected);
         }
 
-        const msg = `You may only yield a function, promise, generator, array, or`
-          + ` object, but the following object was passed: "${String(ret.value)}"`;
+        const msg =
+          `You may only yield a function, promise, generator, array, or` +
+          ` object, but the following object was passed: "${String(
+            ret.value,
+          )}"`;
 
         return onRejected(new TypeError(msg));
       }
     });
-  }
+  };
 }
 
 module.exports = factoryBase;

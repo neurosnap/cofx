@@ -5,7 +5,7 @@ const test = require('tape');
 test('co(* -> yield []) should aggregate several promises', (t) => {
   t.plan(4);
 
-  task(function *() {
+  task(function*() {
     const a = read('index.js', 'utf8');
     const b = read('LICENSE', 'utf8');
     const c = read('package.json', 'utf8');
@@ -21,7 +21,7 @@ test('co(* -> yield []) should aggregate several promises', (t) => {
 test('co(* -> yield []) should noop with no args', (t) => {
   t.plan(1);
 
-  task(function *(){
+  task(function*() {
     const res = yield [];
     t.equal(0, res.length);
   });
@@ -30,8 +30,12 @@ test('co(* -> yield []) should noop with no args', (t) => {
 test('co(* -> yield []) should support an array of generators', (t) => {
   t.plan(1);
 
-  task(function*(){
-    const val = yield [function*(){ return 1 }()]
-    t.deepEqual(val, [1])
-  })
-})
+  task(function*() {
+    const val = yield [
+      (function*() {
+        return 1;
+      })(),
+    ];
+    t.deepEqual(val, [1]);
+  });
+});

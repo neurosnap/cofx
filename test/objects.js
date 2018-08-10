@@ -5,7 +5,7 @@ const test = require('tape');
 test('co(* -> yield {}) should aggregate several promises', (t) => {
   t.plan(4);
 
-  task(function *(){
+  task(function*() {
     const a = read('index.js', 'utf8');
     const b = read('LICENSE', 'utf8');
     const c = read('package.json', 'utf8');
@@ -13,7 +13,7 @@ test('co(* -> yield {}) should aggregate several promises', (t) => {
     const res = yield {
       a: a,
       b: b,
-      c: c
+      c: c,
     };
 
     t.equal(3, Object.keys(res).length);
@@ -26,7 +26,7 @@ test('co(* -> yield {}) should aggregate several promises', (t) => {
 test('co(* -> yield {}) should noop with no args', (t) => {
   t.plan(1);
 
-  task(function *(){
+  task(function*() {
     const res = yield {};
     t.equal(0, Object.keys(res).length);
   });
@@ -35,7 +35,7 @@ test('co(* -> yield {}) should noop with no args', (t) => {
 test('co(* -> yield {}) should ignore non-thunkable properties', (t) => {
   t.plan(8);
 
-  task(function *(){
+  task(function*() {
     const foo = {
       name: { first: 'tobi' },
       age: 2,
@@ -58,22 +58,22 @@ test('co(* -> yield {}) should ignore non-thunkable properties', (t) => {
     t.equal(undefined, foo.undefiney);
     t.ok(~res.address.indexOf('exports'));
   });
-})
+});
 
 test('co(* -> yield {}) should preserve key order', (t) => {
   t.plan(1);
 
-  function timedThunk(time){
-    return function(cb){
+  function timedThunk(time) {
+    return function(cb) {
       setTimeout(cb, time);
-    }
+    };
   }
 
-  task(function *(){
+  task(function*() {
     const before = {
       sun: timedThunk(30),
       rain: timedThunk(20),
-      moon: timedThunk(10)
+      moon: timedThunk(10),
     };
 
     const after = yield before;
@@ -86,5 +86,5 @@ test('co(* -> yield {}) should preserve key order', (t) => {
 
 function Pet(name) {
   this.name = name;
-  this.something = function(){};
+  this.something = function() {};
 }
