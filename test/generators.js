@@ -7,7 +7,7 @@ function sleep(ms) {
   });
 }
 
-function *work() {
+function* work() {
   yield sleep(50);
   return 'yay';
 }
@@ -15,7 +15,7 @@ function *work() {
 test('co(fn*) with a generator function should wrap with co()', (t) => {
   t.plan(4);
 
-  task(function *() {
+  task(function*() {
     const a = yield work;
     const b = yield work;
     const c = yield work;
@@ -32,14 +32,17 @@ test('co(fn*) with a generator function should wrap with co()', (t) => {
 test('co(fn*) with a generator function should catch errors', (t) => {
   t.plan(2);
 
-  task(function *(){
-    yield function *(){
+  task(function*() {
+    yield function*() {
       throw new Error('boom');
     };
-  }).then(function () {
-    throw new Error('wtf')
-  }, function (err) {
-    t.ok(err);
-    t.ok(err.message == 'boom');
-  });
+  }).then(
+    function() {
+      throw new Error('wtf');
+    },
+    function(err) {
+      t.ok(err);
+      t.ok(err.message == 'boom');
+    },
+  );
 });

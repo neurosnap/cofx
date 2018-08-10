@@ -8,12 +8,17 @@ const CALL = 'CALL';
 const call = (fn, ...args) => ({ type: CALL, fn, args });
 const isCall = typeDetector(CALL);
 function callEffect({ fn, args }) {
-  if (!Array.isArray(fn)) {
-    return fn.call(this, ...args);
+  if (Array.isArray(fn)) {
+    const [obj, fnName, ...fargs] = fn;
+    return obj[fnName](...fargs);
   }
 
-  const [obj, fnName, ...fargs] = fn;
-  return obj[fnName](...fargs);
+  const gen = fn.call(this, ...args);
+  if (!gen || typeof gen.next !== 'function') {
+    return Promise.resolve(gen);
+  }
+
+  return gen;
 }
 
 const ALL = 'ALL';
@@ -28,13 +33,13 @@ function allEffect({ effects }, promisify) {
   }
 
   if (isObject(effects)) {
-    const reduceFn = (acc, key) => ({
-      ...acc,
-      [key]: effectHandler.call(ctx, effects[key], promisify),
-    });
-    return Object
-      .keys(effects)
-      .reduce(reduceFn);
+    const reduceFn = (acc, key) => {
+      return {
+        ...acc,
+        [key]: effectHandler.call(ctx, effects[key], promisify),
+      };
+    };
+    return Object.keys(effects).reduce(reduceFn, {});
   }
 }
 
@@ -53,7 +58,9 @@ const delay = (ms) => ({ type: DELAY, ms });
 const isDelay = typeDetector(DELAY);
 function delayEffect({ ms }) {
   return new Promise((resolve, reject) => {
-    setTimeout(() => { resolve(); }, ms);
+    setTimeout(() => {
+      resolve();
+    }, ms);
   });
 }
 
@@ -70,7 +77,7 @@ function effectMiddleware(next) {
   return (effect, promisify) => {
     const nextEffect = effectHandler(effect, promisify);
     return next(nextEffect);
-  }
+  };
 }
 
 module.exports = { effectMiddleware, delay, call, spawn, all };

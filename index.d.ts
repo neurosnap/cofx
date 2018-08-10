@@ -18,12 +18,14 @@ declare module 'cosed' {
   }
   export interface AllEffect {
     type: 'ALL';
-    effects: Effect[];
+    effects: Effect[] | { [key: string]: Effect };
   }
   export type Effect = { type: string } & { [key: string]: any };
   export type NextFn = (...args: any[]) => Middleware;
   export type Promisify = (p: any) => Promise<any>;
-  export type Middleware = (next: NextFn) => (effect: Effect, promisify: Promisify) => Middleware;
+  export type Middleware = (
+    next: NextFn,
+  ) => (effect: Effect, promisify: Promisify) => Middleware;
 
   export function task(fn: CoFn, ...args: any[]): Promise<any>;
   export function call(fn: Fn, ...args: any[]): CallEffect;

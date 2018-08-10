@@ -6,8 +6,9 @@
   "license": "MIT",
   "description": "co side effects as data",
   "scripts": {
-    "test": "tape 'test/**/*.js' | tap-dot",
-    "precommit": "lint-staged"
+    "test": "tape \"test/*.js\" | tap-dot",
+    "precommit": "lint-staged",
+    "prettier": "prettier --write {src,test}/*.{js,ts}"
   },
   "devDependencies": {
     "gen-tester": "^2.0.0",
