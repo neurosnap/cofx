@@ -1,6 +1,5 @@
 const { task, call, all, spawn, delay, factory } = require('..');
 const fetch = require('node-fetch');
-const assert = require('assert');
 const test = require('tape');
 const nock = require('nock');
 const genTester = require('gen-tester');

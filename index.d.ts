@@ -1,4 +1,4 @@
-declare module 'cosed' {
+declare module 'cofx' {
   export type CoFn = (...args: any[]) => any;
   export type TaskFn = (fn: CoFn, ...args: any[]) => Promise<any>;
   export type Fn = (...args: any[]) => any;

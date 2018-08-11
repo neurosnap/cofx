@@ -1,27 +1,30 @@
-# cosed [![Build Status](https://travis-ci.org/neurosnap/cosed.svg?branch=master)](https://travis-ci.org/neurosnap/cosed)
+# cofx [![Build Status](https://travis-ci.org/neurosnap/cofx.svg?branch=master)](https://travis-ci.org/neurosnap/cofx)
 
-Fork of [co](https://github.com/tj/co) that describes asynchronous tasks as data.
+A node, javascript library that helps developers describe side-effects as data in a declarative, flexible API.
 
 ## Why?
 
-Instead of a generator activating side-effects it instead yields data objects
-that represent how side-effects ought to be executed.  This pushes side-effects
-to `co` instead of the application itself.
+Instead of a generator activating side-effects (e.g. making HTTP requests)
+it instead yields data objects that represent how side-effects ought to be executed.  This pushes side-effects
+to `cofx` instead of the application itself.
 
 Effectively this makes testing side-effects as easy as checking that each step
-in a generator returns the proper data structure.
+in a generator returns the proper data structure.  Because we are leveraging generators
+this library also helps reduce the level of nesting when dealing with asynchronous operations.
 
 This library was inspired by [redux-saga](https://github.com/redux-saga/redux-saga)
 and [re-frame](https://github.com/Day8/re-frame).  Whenever I left the world
-of `redux-saga` and wanted to test my async/await/generator functions it would require
+of a react/redux and wanted to test my async/await/generator functions it would require
 mocking/intercepting HTTP requests which is a terrible developer experience after
-coming from describing side-effects as data.
+coming from describing side-effects as data.  Instead this library does all the heavy
+lifting of activating the side-effects while the end-developer can build their in a
+declarative manner.
 
 [Effects as Data talk by Richard Feldman](https://www.youtube.com/watch?v=6EdXaWfoslc)
 
 ## How?
 
-`cosed` will work exactly like `co` with the exception that it can handle a new
+`cofx` will work exactly like `co` with the exception that it can handle a new
 yielded value type: effect objects. An effect object looks something like this:
 
 ```json
@@ -32,10 +35,11 @@ yielded value type: effect objects. An effect object looks something like this:
 }
 ```
 
-`task` is an alias for the `co` function.
+`task` is an alias for the `co` function.  It returns a promise that receives the return
+value of the generator.
 
 ```js
-import { call, task } from 'cosed';
+import { call, task } from 'cofx';
 
 function* fetchBin() {
   const resp = yield call(fetch, 'http://httpbin.org/get');
@@ -131,7 +135,7 @@ Manages async flow for a generator.  This is an alias to the `co` function.
 ### call
 
 ```js
-const { task, call } = require('cosed');
+const { task, call } = require('cofx');
 const fetch = require('node-fetch');
 
 function* example() {
@@ -148,7 +152,7 @@ Uses `Promise.all` to execute effects in parallel.  Could be an array of effects
 or an object of effects.
 
 ```js
-const { task, call, all } = require('cosed');
+const { task, call, all } = require('cofx');
 const fetch = require('node-fetch');
 
 function* example() {
@@ -168,7 +172,7 @@ task(example);
 Spawns an effect without the generator waiting for that effect to finish.
 
 ```js
-const { task, spawn } = require('cosed');
+const { task, spawn } = require('cofx');
 const fetch = require('node-fetch');
 
 function effect() {
@@ -196,7 +200,7 @@ task(example);
 This will `sleep` the generator for the designated amount of time.
 
 ```js
-const { task, delay } = require('cosed');
+const { task, delay } = require('cofx');
 
 function* example() {
   console.log('INIT')
@@ -218,7 +222,7 @@ to allow other middleware to handle the effect as well, you
 must return `next(effect)`;
 
 ```js
-const { factory } = require('cosed');
+const { factory } = require('cofx');
 
 const ERROR = 'ERROR';
 const error = (msg) => ({ type: ERROR, msg });
