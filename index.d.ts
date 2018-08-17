@@ -4,7 +4,7 @@ declare module 'cofx' {
   export type Fn = (...args: any[]) => any;
   export interface CallEffect {
     type: 'CALL';
-    fn: Fn;
+    fn: Fn | any[];
     args: any[];
   }
   export interface SpawnEffect {
