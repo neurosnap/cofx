@@ -28,7 +28,7 @@ declare module 'cofx' {
   ) => (effect: Effect, promisify: Promisify) => Middleware;
 
   export function task(fn: CoFn, ...args: any[]): Promise<any>;
-  export function call(fn: Fn, ...args: any[]): CallEffect;
+  export function call(fn: Fn | any[], ...args: any[]): CallEffect;
   export function all(effects: Effect[]): AllEffect;
   export function delay(ms: number): DelayEffect;
   export function factory(...args: Middleware[]): TaskFn;
