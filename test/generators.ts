@@ -1,7 +1,7 @@
-var { task } = require('..');
-const test = require('tape');
+import { task } from '../src/index';
+import * as test from 'tape';
 
-function sleep(ms) {
+function sleep(ms: number) {
   return new Promise((resolve) => {
     setTimeout(() => resolve(), ms);
   });
@@ -33,6 +33,7 @@ test('co(fn*) with a generator function should catch errors', (t) => {
   t.plan(2);
 
   task(function*() {
+    // @ts-ignore
     yield function*() {
       throw new Error('boom');
     };

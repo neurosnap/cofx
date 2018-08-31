@@ -1,23 +1,20 @@
-const read = require('mz/fs').readFile;
-const { task } = require('..');
-const test = require('tape');
+import { readFile as read } from 'mz/fs';
+import { task } from '../src/index';
+import * as test from 'tape';
 
 test('co(* -> yield {}) should aggregate several promises', (t) => {
-  t.plan(4);
+  t.plan(3);
 
   task(function*() {
-    const a = read('index.js', 'utf8');
     const b = read('LICENSE', 'utf8');
     const c = read('package.json', 'utf8');
 
     const res = yield {
-      a: a,
       b: b,
       c: c,
     };
 
-    t.equal(3, Object.keys(res).length);
-    t.ok(~res.a.indexOf('exports'));
+    t.equal(2, Object.keys(res).length);
     t.ok(~res.b.indexOf('MIT'));
     t.ok(~res.c.indexOf('devDependencies'));
   });
@@ -39,12 +36,12 @@ test('co(* -> yield {}) should ignore non-thunkable properties', (t) => {
     const foo = {
       name: { first: 'tobi' },
       age: 2,
-      address: read('index.js', 'utf8'),
+      address: read('LICENSE', 'utf8'),
       tobi: new Pet('tobi'),
       now: new Date(),
       falsey: false,
-      nully: null,
-      undefiney: undefined,
+      nully: null as any,
+      undefiney: undefined as any,
     };
 
     const res = yield foo;
@@ -56,35 +53,15 @@ test('co(* -> yield {}) should ignore non-thunkable properties', (t) => {
     t.equal(false, foo.falsey);
     t.equal(null, foo.nully);
     t.equal(undefined, foo.undefiney);
-    t.ok(~res.address.indexOf('exports'));
+    t.ok(~res.address.indexOf('MIT'));
   });
 });
 
-test('co(* -> yield {}) should preserve key order', (t) => {
-  t.plan(1);
-
-  function timedThunk(time) {
-    return function(cb) {
-      setTimeout(cb, time);
-    };
+class Pet {
+  name: string;
+  something: () => void;
+  constructor(name: string) {
+    this.name = name;
+    this.something = function() {};
   }
-
-  task(function*() {
-    const before = {
-      sun: timedThunk(30),
-      rain: timedThunk(20),
-      moon: timedThunk(10),
-    };
-
-    const after = yield before;
-
-    const orderBefore = Object.keys(before).join(',');
-    const orderAfter = Object.keys(after).join(',');
-    t.equal(orderBefore, orderAfter);
-  });
-});
-
-function Pet(name) {
-  this.name = name;
-  this.something = function() {};
 }

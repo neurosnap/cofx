@@ -1,5 +1,5 @@
-const { task } = require('..');
-const test = require('tape');
+import { task } from '../src/index';
+import * as test from 'tape';
 
 const ctx = {
   some: 'thing',
@@ -8,6 +8,7 @@ const ctx = {
 test('co.call(this) should pass the context', (t) => {
   t.plan(1);
 
+  // @ts-ignore
   task.call(ctx, function*() {
     t.ok(ctx == this);
   });

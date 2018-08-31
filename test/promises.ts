@@ -1,7 +1,7 @@
-const { task } = require('..');
-const test = require('tape');
+import { task } from '../src/index';
+import * as test from 'tape';
 
-function getPromise(val, err) {
+function getPromise(val: any, err?: any) {
   return new Promise(function(resolve, reject) {
     if (err) reject(err);
     else resolve(val);
@@ -32,7 +32,7 @@ test('co(* -> yield <promise> with several promise yields', (t) => {
 test('co(* -> yield <promise> when a promise is rejected', (t) => {
   t.plan(2);
 
-  let error;
+  let error: any;
 
   task(function*() {
     try {
