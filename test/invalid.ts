@@ -1,5 +1,5 @@
-const { task } = require('..');
-const test = require('tape');
+import { task } from '../src/index';
+import * as test from 'tape';
 
 test('yield <invalid> should throw an error', (t) => {
   t.plan(2);

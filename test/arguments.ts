@@ -1,11 +1,18 @@
-const { task } = require('..');
-const test = require('tape');
+import { task } from '../src/index';
+import * as test from 'tape';
 
 test('co(gen, args) should pass the rest of the arguments', (t) => {
   t.plan(5);
 
   task(
-    function*(num, str, arr, obj, fun) {
+    // @ts-ignore
+    function*(
+      num: number,
+      str: string,
+      arr: any[],
+      obj: { [key: string]: any },
+      fun: (...args: any[]) => void,
+    ) {
       t.ok(num === 42);
       t.ok(str === 'forty-two');
       t.ok(arr[0] === 42);

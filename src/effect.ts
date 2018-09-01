@@ -1,13 +1,26 @@
-const { isObject } = require('./is');
+import { isObject } from './is';
+import {
+  CallEffect,
+  Effect,
+  Promisify,
+  CoFn,
+  DelayEffect,
+  NextFn,
+  AllEffects,
+} from './types';
 
 const noop = () => {};
-const typeDetector = (type) => (value) =>
+const typeDetector = (type: string) => (value: any) =>
   value && isObject(value) && value.type === type;
 
 const CALL = 'CALL';
-const call = (fn, ...args) => ({ type: CALL, fn, args });
+const call = (fn: CoFn | any[], ...args: any[]): CallEffect => ({
+  type: CALL,
+  fn,
+  args,
+});
 const isCall = typeDetector(CALL);
-function callEffect({ fn, args }) {
+function callEffect({ fn, args }: { fn: CoFn; args: any[] }) {
   if (Array.isArray(fn)) {
     const [obj, fnName, ...fargs] = fn;
     return obj[fnName](...fargs);
@@ -22,18 +35,22 @@ function callEffect({ fn, args }) {
 }
 
 const ALL = 'ALL';
-const all = (effects) => ({ type: ALL, effects });
+const all = (effects: AllEffects) => ({
+  type: ALL,
+  effects,
+});
 const isAll = typeDetector(ALL);
-function allEffect({ effects }, promisify) {
+function allEffect({ effects }: { effects: AllEffects }, promisify: Promisify) {
   const ctx = this;
 
   if (Array.isArray(effects)) {
-    const mapFn = (effect) => effectHandler.call(ctx, effect, promisify);
+    const mapFn = (effect: Effect) =>
+      effectHandler.call(ctx, effect, promisify);
     return effects.map(mapFn);
   }
 
   if (isObject(effects)) {
-    const reduceFn = (acc, key) => {
+    const reduceFn = (acc: { [key: string]: Promise<any> }, key: string) => {
       return {
         ...acc,
         [key]: effectHandler.call(ctx, effects[key], promisify),
@@ -44,9 +61,12 @@ function allEffect({ effects }, promisify) {
 }
 
 const SPAWN = 'SPAWN';
-const spawn = (fn, ...args) => ({ type: SPAWN, fn, args });
+const spawn = (fn: CoFn, ...args: any[]) => ({ type: SPAWN, fn, args });
 const isSpawn = typeDetector(SPAWN);
-function spawnEffect({ fn, args }, promisify) {
+function spawnEffect(
+  { fn, args }: { fn: CoFn; args: any[] },
+  promisify: Promisify,
+) {
   return new Promise((resolve, reject) => {
     promisify(fn.call(this, ...args)).then(noop);
     resolve();
@@ -54,9 +74,9 @@ function spawnEffect({ fn, args }, promisify) {
 }
 
 const DELAY = 'DELAY';
-const delay = (ms) => ({ type: DELAY, ms });
+const delay = (ms: number): DelayEffect => ({ type: DELAY, ms });
 const isDelay = typeDetector(DELAY);
-function delayEffect({ ms }) {
+function delayEffect({ ms }: { ms: number }) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve();
@@ -64,7 +84,7 @@ function delayEffect({ ms }) {
   });
 }
 
-function effectHandler(effect, promisify) {
+function effectHandler(effect: Effect, promisify: Promisify) {
   const ctx = this;
   if (isCall(effect)) return callEffect.call(ctx, effect);
   if (isAll(effect)) return allEffect.call(ctx, effect, promisify);
@@ -73,11 +93,11 @@ function effectHandler(effect, promisify) {
   return effect;
 }
 
-function effectMiddleware(next) {
-  return (effect, promisify) => {
+function effectMiddleware(next: NextFn) {
+  return (effect: Effect, promisify: Promisify) => {
     const nextEffect = effectHandler(effect, promisify);
     return next(nextEffect);
   };
 }
 
-module.exports = { effectMiddleware, delay, call, spawn, all };
+export { effectMiddleware, delay, call, spawn, all };

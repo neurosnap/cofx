@@ -1,0 +1,22 @@
+{
+  "baseUrl": "types",
+  "typeRoots": ["types"],
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "target": "es6",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["es2015", "es2017", "dom"],
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "./test/*.ts"
+  ]
+}

@@ -1,8 +1,8 @@
-const { task, call, all, spawn, delay, factory } = require('..');
-const fetch = require('node-fetch');
-const test = require('tape');
-const nock = require('nock');
-const genTester = require('gen-tester');
+import { task, call, all, spawn, delay, factory } from '../src/index';
+import fetch from 'node-fetch';
+import * as test from 'tape';
+import * as nock from 'nock';
+import { genTester, yields } from 'gen-tester';
 
 const noop = () => {};
 
@@ -20,7 +20,7 @@ test('task runtime', (t) => {
     .reply(200, mockData);
 
   t.plan(1);
-  const assertData = (data) => {
+  const assertData = (data: any) => {
     t.deepEqual(data, mockData, 'data should equal expected data');
   };
 
@@ -94,12 +94,11 @@ test('call effect', (t) => {
   const respValue = { resp: 'value', json: 'hi' };
   const returnValue = { data: 'value', extra: 'stuff' };
   const tester = genTester(genCall);
-  const actual = tester([respValue, { data: 'value' }]);
-  const expected = [
-    call(fetch, 'http://httpbin.org/get'),
-    call([respValue, 'json']),
+  const { actual, expected } = tester(
+    yields(call(fetch, 'http://httpbin.org/get'), respValue),
+    yields(call([respValue, 'json']), { data: 'value' }),
     returnValue,
-  ];
+  );
 
   t.deepEqual(actual, expected);
 });
@@ -116,11 +115,10 @@ test('all effect array', (t) => {
   }
   const allVal = [{ one: true }, { two: true }];
   const tester = genTester(genAll);
-  const actual = tester([allVal]);
-  const expected = [
-    all([call(effectOne, 'one'), call(effectTwo, 'two')]),
+  const { actual, expected } = tester(
+    yields(all([call(effectOne, 'one'), call(effectTwo, 'two')])),
     allVal,
-  ];
+  );
 
   t.deepEqual(actual, expected);
 });
@@ -140,14 +138,16 @@ test('all effect object', (t) => {
   }
   const allVal = { one: true, two: true };
   const tester = genTester(genAll);
-  const actual = tester([allVal]);
-  const expected = [
-    all({
-      one: call(effectOne, 'one'),
-      two: call(effectTwo, 'two'),
-    }),
+  const { actual, expected } = tester(
+    yields(
+      all({
+        one: call(effectOne, 'one'),
+        two: call(effectTwo, 'two'),
+      }),
+      allVal,
+    ),
     allVal,
-  ];
+  );
 
   t.deepEqual(actual, expected);
 });
@@ -155,15 +155,15 @@ test('all effect object', (t) => {
 test('spawn effect', (t) => {
   t.plan(1);
 
+  // @ts-ignore
   function* effect() {}
-  function* genSpawn(val) {
+  function* genSpawn(val: any) {
     yield spawn(effect, val);
     return 'DONE';
   }
   const val = 'value';
   const tester = genTester(genSpawn, val);
-  const actual = tester([null]);
-  const expected = [spawn(effect, val), 'DONE'];
+  const { actual, expected } = tester(yields(spawn(effect, val), null), 'DONE');
 
   t.deepEqual(actual, expected);
 });
@@ -175,10 +175,8 @@ test('delay effect', (t) => {
     yield delay(1000);
     return 'DONE';
   }
-  const val = 'value';
   const tester = genTester(genDelay);
-  const actual = tester([null]);
-  const expected = [delay(1000), 'DONE'];
+  const { actual, expected } = tester(yields(delay(1000), null), 'DONE');
 
   t.deepEqual(actual, expected);
 });
@@ -186,7 +184,7 @@ test('delay effect', (t) => {
 test('custom middleware', (t) => {
   t.plan(1);
 
-  const middleware = (next) => (effect) => {
+  const middleware = (next: any) => (effect: any) => {
     if (effect.type === 'CUSTOM_EFFECT') {
       t.ok(true, 'must rech this branch');
       return Promise.resolve();

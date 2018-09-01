@@ -1,17 +1,26 @@
 {
   "name": "cofx",
-  "version": "1.1.11",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "version": "1.2.2",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "license": "MIT",
-  "description": "declarative side-effects for node",
+  "description": "declarative side-effects for js, node",
+  "author": "Eric Bower",
   "scripts": {
-    "test": "tape \"test/*.js\" | tap-dot",
+    "build": "tsc",
+    "test": "tsc --noEmit && yarn tape",
+    "prepublish": "yarn build",
+    "tape": "tape -r ts-node/register --project ./tsconfig.test.json ./test/*.ts | tap-dot",
     "precommit": "lint-staged",
     "prettier": "prettier --write {src,test}/*.{js,ts}"
   },
   "devDependencies": {
-    "gen-tester": "^2.0.0",
+    "@types/mz": "^0.0.32",
+    "@types/nock": "^9.3.0",
+    "@types/node": "^10.9.3",
+    "@types/node-fetch": "^2.1.2",
+    "@types/tape": "^4.2.32",
+    "gen-tester": "^3.1.3",
     "husky": "^0.14.3",
     "lint-staged": "^7.2.0",
     "mz": "^2.7.0",
@@ -19,7 +28,9 @@
     "node-fetch": "^2.1.2",
     "prettier": "1.13.6",
     "tap-dot": "^2.0.0",
-    "tape": "^4.9.1"
+    "tape": "^4.9.1",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.1.0-dev.20180831"
   },
   "dependencies": {},
   "lint-staged": {

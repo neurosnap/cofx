@@ -1,12 +1,12 @@
-function isPromise(obj) {
+function isPromise(obj: any) {
   return 'function' == typeof obj.then;
 }
 
-function isGenerator(obj) {
+function isGenerator(obj: any) {
   return 'function' == typeof obj.next && 'function' == typeof obj.throw;
 }
 
-function isGeneratorFunction(obj) {
+function isGeneratorFunction(obj: any) {
   const constructor = obj.constructor;
   const name = constructor.name;
   const displayName = constructor.displayName;
@@ -21,8 +21,8 @@ function isGeneratorFunction(obj) {
   return isGenerator(constructor.prototype);
 }
 
-function isObject(val) {
+function isObject(val: any) {
   return Object == val.constructor;
 }
 
-module.exports = { isPromise, isGenerator, isGeneratorFunction, isObject };
+export { isPromise, isGenerator, isGeneratorFunction, isObject };
