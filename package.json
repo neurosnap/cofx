@@ -6,6 +6,10 @@
   "license": "MIT",
   "description": "declarative side-effects for js, node",
   "author": "Eric Bower",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neurosnap/cofx.git"
+  },
   "scripts": {
     "build": "tsc",
     "test": "tsc --noEmit && yarn tape",
