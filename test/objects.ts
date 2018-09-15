@@ -6,7 +6,7 @@ test('co(* -> yield {}) should aggregate several promises', (t) => {
   t.plan(3);
 
   task(function*() {
-    const b = read('LICENSE', 'utf8');
+    const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
 
     const res = yield {
@@ -36,7 +36,7 @@ test('co(* -> yield {}) should ignore non-thunkable properties', (t) => {
     const foo = {
       name: { first: 'tobi' },
       age: 2,
-      address: read('LICENSE', 'utf8'),
+      address: read('LICENSE.md', 'utf8'),
       tobi: new Pet('tobi'),
       now: new Date(),
       falsey: false,

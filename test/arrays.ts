@@ -6,7 +6,7 @@ test('co(* -> yield []) should aggregate several promises', (t) => {
   t.plan(3);
 
   task(function*() {
-    const b = read('LICENSE', 'utf8');
+    const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
 
     const res = yield [b, c];

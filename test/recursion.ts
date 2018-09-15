@@ -7,7 +7,7 @@ test('co() recursion should aggregate arrays within arrays', (t) => {
 
   task(function*() {
     const a = read('prettier.config.js', 'utf8');
-    const b = read('LICENSE', 'utf8');
+    const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
 
     const res = yield [a, [b, c]];
@@ -24,7 +24,7 @@ test('co() recursion should aggregate objects within objects', (t) => {
 
   task(function*() {
     const a = read('prettier.config.js', 'utf8');
-    const b = read('LICENSE', 'utf8');
+    const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
 
     const res = yield {
