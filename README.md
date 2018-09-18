@@ -134,9 +134,9 @@ generator one step after another and make sure the yield makes the correct call.
 
 ## References
 
-https://github.com/neurosnap/react-cofx
-https://github.com/neurosnap/redux-cofx
-https://github.com/neurosnap/gen-tester
+* [react-cofx](https://github.com/neurosnap/react-cofx) async render components
+* [redux-cofx](https://github.com/neurosnap/redux-cofx) side-effect middleware for redux
+* [gen-tester](https://github.com/neurosnap/gen-tester) test cofx generators
 
 ## API
 
