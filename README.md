@@ -2,11 +2,17 @@
 
 A node, javascript library that helps developers describe side-effects as data in a declarative, flexible API.
 
+## Features
+
+* Perform non-blocking IO operations synchronously
+* Generators yield data structures, not IO
+* Testability
+* Ability to write custom effect handlers
+
 ## Why?
 
 Instead of a generator activating side-effects (e.g. making HTTP requests)
-it instead yields data objects that represent how side-effects ought to be executed.  This pushes side-effects
-to `cofx` instead of the application itself.
+it instead yields data objects that represent how side-effects ought to be executed.
 
 Effectively this makes testing side-effects as easy as checking that each step
 in a generator returns the proper data structure.  Because we are leveraging generators
@@ -125,6 +131,12 @@ side-effects as data: we can test our generator function synchronously, without
 needing any HTTP interceptors or mocking functions!  So even though at every yield
 this library will make asynchronous calls, for testing, we can step through the
 generator one step after another and make sure the yield makes the correct call.
+
+## References
+
+https://github.com/neurosnap/react-cofx
+https://github.com/neurosnap/redux-cofx
+https://github.com/neurosnap/gen-tester
 
 ## API
 
