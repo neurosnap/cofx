@@ -1,6 +1,6 @@
 # cofx [![Build Status](https://travis-ci.org/neurosnap/cofx.svg?branch=master)](https://travis-ci.org/neurosnap/cofx)
 
-A node, javascript library that helps developers describe side-effects as data in a declarative, flexible API.
+A node and javascript library that helps developers describe side-effects as data in a declarative, flexible API.
 
 ## Features
 
@@ -11,8 +11,15 @@ A node, javascript library that helps developers describe side-effects as data i
 
 ## Why?
 
+Maintaining side-effects, especially IO, are difficult to write in javascript.  They are asynchronous,
+they require effort to prevent callback hell, and they can be difficult to test.
+
+This library leverages the power of generators to help control the flow of side-effects as well as 
+create a platform to easily test those side-effects.  The key feature of this library is to 
+describe those side-effects as data.
+
 Instead of a generator activating side-effects (e.g. making HTTP requests)
-it instead yields data objects that represent how side-effects ought to be executed.
+it yields data objects that represent how side-effects ought to be executed.
 
 Effectively this makes testing side-effects as easy as checking that each step
 in a generator returns the proper data structure.  Because we are leveraging generators
@@ -20,18 +27,36 @@ this library also helps reduce the level of nesting when dealing with asynchrono
 
 This library was inspired by [redux-saga](https://github.com/redux-saga/redux-saga)
 and [re-frame](https://github.com/Day8/re-frame).  Whenever I left the world
-of a react/redux and wanted to test my async/await/generator functions it would require
-mocking/intercepting HTTP requests which is a terrible developer experience after
-coming from describing side-effects as data.  Instead this library does all the heavy
-lifting of activating the side-effects while the end-developer can build their in a
-declarative manner.
+of react/redux and wanted to test my async/await/generator functions it would require
+mocking/intercepting HTTP requests which is a terrible developer experience.  
+Instead this library does all the heavy lifting of activating the side-effects while 
+the end-developer can write code in a declarative manner.
 
-[Effects as Data talk by Richard Feldman](https://www.youtube.com/watch?v=6EdXaWfoslc)
+This technique is very popular, the prime example is `react`.  Testing react components
+is easy because the components are functions that accept state and then return data as HTML.  
+
+```js
+const view = f(state);
+```
+
+The functions themselves do not mutate the DOM, they tell the `react` runtime how to mutate the DOM.  
+This is a critical distinction and pivotal for understanding how this library operates.
+Effectively the end-developer only concerns itself with the shape of the data being returned from their
+react components and the react runtime does the rest.
+
+
+## References
+
+* [Effects as Data talk by Richard Feldman](https://www.youtube.com/watch?v=6EdXaWfoslc)
+* [react-cofx](https://github.com/neurosnap/react-cofx) async render components
+* [redux-cofx](https://github.com/neurosnap/redux-cofx) side-effect middleware for redux
+* [gen-tester](https://github.com/neurosnap/gen-tester) test cofx generators
+
 
 ## How?
 
-`cofx` will work exactly like `co` with the exception that it can handle a new
-yielded value type: effect objects. An effect object looks something like this:
+`cofx` will yield to data objects and activate side-effects based on the shape of those objects.
+An effect object looks something like this:
 
 ```json
 {
@@ -41,12 +66,17 @@ yielded value type: effect objects. An effect object looks something like this:
 }
 ```
 
-`task` is an alias for the `co` function.  It returns a promise that receives the return
-value of the generator.
+This JSON object tells the `cofx` runtime that it should call a function, `fn` with arguments
+in `args`.  From there the runtime knows exactly what to do with the results of the function, whether it's
+a promise or a not.
+
+`task` returns a promise that receives the return value of the generator.
 
 ```js
 import { call, task } from 'cofx';
 
+// running this generator without the runtime `task` would simply return data objects that describe
+// what the runtime should do.  Really it returns a DSL that the runtime interprets.
 function* fetchBin() {
   const resp = yield call(fetch, 'http://httpbin.org/get');
   // sending an array makes `call` activate the function `json` on `resp` object
@@ -56,6 +86,8 @@ function* fetchBin() {
   return { ...data, extra: 'stuff' };
 }
 
+// `task` is in charge of handling the actual side-effects
+// all user code does not contain any side-effects because they return json objects
 task(fetchBin)
   .then(console.log)
   .catch(console.error);
@@ -125,18 +157,12 @@ test('test fetchBin', (t) => {
 });
 ```
 
-Take a close look here.  When the generator function does not get called by `task`
+When the generator function does not get called by `task`
 all it does is return JSON at every `yield`.  This is the brilliance of describing
 side-effects as data: we can test our generator function synchronously, without
 needing any HTTP interceptors or mocking functions!  So even though at every yield
 this library will make asynchronous calls, for testing, we can step through the
 generator one step after another and make sure the yield makes the correct call.
-
-## References
-
-* [react-cofx](https://github.com/neurosnap/react-cofx) async render components
-* [redux-cofx](https://github.com/neurosnap/redux-cofx) side-effect middleware for redux
-* [gen-tester](https://github.com/neurosnap/gen-tester) test cofx generators
 
 ## API
 
@@ -229,9 +255,11 @@ task(example);
 ### factory
 
 This is what creates `task`.  This allows end-developers to build their own
-effect middleware.  When using middleware it must return a promise, something that `co` understands how to handle, and
-to allow other middleware to handle the effect as well, you
-must return `next(effect)`;
+effect middleware.  When using middleware it must return a promise, something that 
+`co` understands how to handle, and to allow other middleware to handle the effect 
+as well, you must return `next(effect)`;
+
+#### error effect handler
 
 ```js
 const { factory } = require('cofx');
@@ -256,4 +284,32 @@ customTask(example).catch((err) => {
 });
 
 // ERROR: SOMETHING HAPPENED
+```
+
+#### date effect handler
+
+```js
+const { factory } = require('cofx');
+
+const GET_DATE = 'GET_DATE';
+const getDate = () => ({ type: GET_DATE });
+const middleware = (next) => (effect) => {
+  if (effect.type === GET_DATE) {
+    return Promise.resolve(new Date());
+  }
+
+  return next(effect);
+};
+
+function* example() {
+  const now = yield getDate();
+  return now;
+}
+
+const customTask = factory(middleware);
+customTask(example).then((now) => {
+  console.log(now);
+});
+
+// Fri Sep 21 2018 13:44:24 GMT-0400 (Eastern Daylight Time) 
 ```
