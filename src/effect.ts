@@ -60,6 +60,50 @@ function allEffect({ effects }: { effects: AllEffects }, promisify: Promisify) {
   }
 }
 
+const RACE = 'RACE';
+const race = (effects: AllEffects) => ({
+  type: RACE,
+  effects,
+});
+const isRace = typeDetector(RACE);
+function raceEffect(
+  { effects }: { effects: AllEffects },
+  promisify: Promisify,
+) {
+  const ctx = this;
+
+  if (Array.isArray(effects)) {
+    const mapFn = (effect: Effect) =>
+      promisify(effectHandler.call(ctx, effect, promisify));
+    const eff = effects.map(mapFn);
+    return Promise.race(eff);
+  }
+
+  const keys = Object.keys(effects);
+  return Promise.race(
+    keys.map((key: string) => {
+      return promisify(effectHandler.call(ctx, effects[key], promisify)).then(
+        (result) => {
+          return {
+            winner: key,
+            result,
+          };
+        },
+      );
+    }),
+  ).then((result) => {
+    return keys.reduce((acc: { [key: string]: any }, key: string) => {
+      if (result.winner === key) {
+        acc[key] = result.result;
+      } else {
+        acc[key] = undefined;
+      }
+
+      return acc;
+    }, {});
+  });
+}
+
 const SPAWN = 'SPAWN';
 const spawn = (fn: CoFn, ...args: any[]) => ({ type: SPAWN, fn, args });
 const isSpawn = typeDetector(SPAWN);
@@ -88,6 +132,7 @@ function effectHandler(effect: Effect, promisify: Promisify) {
   const ctx = this;
   if (isCall(effect)) return callEffect.call(ctx, effect);
   if (isAll(effect)) return allEffect.call(ctx, effect, promisify);
+  if (isRace(effect)) return raceEffect.call(ctx, effect, promisify);
   if (isSpawn(effect)) return spawnEffect.call(ctx, effect, promisify);
   if (isDelay(effect)) return delayEffect.call(ctx, effect);
   return effect;
@@ -100,4 +145,4 @@ function effectMiddleware(next: NextFn) {
   };
 }
 
-export { effectMiddleware, delay, call, spawn, all };
+export { effectMiddleware, delay, call, spawn, all, race };
