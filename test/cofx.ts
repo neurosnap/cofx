@@ -1,4 +1,4 @@
-import { task, call, all, spawn, delay, factory } from '../src/index';
+import { task, call, all, spawn, delay, factory, race } from '../src/index';
 import fetch from 'node-fetch';
 import * as test from 'tape';
 import * as nock from 'nock';
@@ -67,6 +67,21 @@ test('task runtime call effect normal function', (t) => {
 
   task(two).then((data) => {
     t.equal(data, 'hi');
+  });
+});
+
+test('task runtime all effect array', (t) => {
+  t.plan(1);
+  function* one() {
+    return 'hi';
+  }
+  function* two() {
+    const result = yield all([call(one), call(one)]);
+    return result;
+  }
+
+  task(two).then((data) => {
+    t.deepEqual(data, ['hi', 'hi']);
   });
 });
 
@@ -200,6 +215,57 @@ test('custom middleware', (t) => {
 
   const customTask = factory(middleware);
   customTask(genCustom);
+});
+
+test('race array runtime', (t) => {
+  function* one() {
+    yield delay(500);
+    return 1;
+  }
+  function* two() {
+    yield delay(100);
+    return 2;
+  }
+  function* go() {
+    const res = yield race([call(one), call(two)]);
+    return res;
+  }
+
+  t.plan(1);
+  const assertData = (data: any) => {
+    t.equal(data, 2, 'data should equal expected data');
+  };
+
+  task(go).then(assertData);
+});
+
+test('race obj runtime', (t) => {
+  function* one() {
+    yield delay(500);
+    return 1;
+  }
+  function* two() {
+    yield delay(100);
+    return 2;
+  }
+  function* go() {
+    const res = yield race({
+      one: call(one),
+      two: call(two),
+    });
+    return res;
+  }
+
+  t.plan(1);
+  const assertData = (data: any) => {
+    t.deepEqual(
+      data,
+      { one: undefined, two: 2 },
+      'data should equal expected data',
+    );
+  };
+
+  task(go).then(assertData);
 });
 
 /* function* sp() {

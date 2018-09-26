@@ -179,6 +179,49 @@ function* example() {
 task(example);
 ```
 
+### race
+
+Uses `Promise.race` to execute effects in parallel.  Could be an array of effects
+or an object of effects.  The request that finishes first will be returned.
+
+```js
+const { task, call, race } = require('cofx');
+const fetch = require('node-fetch');
+
+function* example() {
+  const resp = yield race([
+    call(fetch, 'http://google.com'),
+    call(fetch, 'http://something-really-slow.com'),
+  ]);
+  const data = yield call([resp, 'json']); // resp is the result of the fastest request
+  return data;
+}
+
+task(example);
+```
+
+```js
+const { task, call, race, delay } = require('cofx');
+const fetch = require('node-fetch');
+
+function* example() {
+  const resp = yield race({
+    google: call(fetch, 'http://google.com'),
+    delay: delay(10 * 1000),
+  });
+
+  console.log(resp);
+  // -> { google: { ... }, delay: undefined }
+
+  if (resp.google) {
+    const data = yield call([resp, 'json']); // resp is the result of the fastest request
+    return data;
+  }
+}
+
+task(example);
+```
+
 ### spawn
 
 Spawns an effect without the generator waiting for that effect to finish.
