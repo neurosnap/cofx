@@ -26,7 +26,7 @@ function callEffect({ fn, args }: { fn: CoFn; args: any[] }) {
     return obj[fnName](...fargs);
   }
 
-  const gen = fn.call(this, ...args);
+  const gen = fn(...args);
   if (!gen || typeof gen.next !== 'function') {
     return Promise.resolve(gen);
   }
@@ -112,7 +112,7 @@ function spawnEffect(
   promisify: Promisify,
 ) {
   return new Promise((resolve, reject) => {
-    promisify(fn.call(this, ...args)).then(noop);
+    promisify(fn(...args)).then(noop);
     resolve();
   });
 }
