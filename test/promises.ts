@@ -62,7 +62,7 @@ test('co(function) -> promise', (t) => {
 
   task(function() {
     return 1;
-  }).then(function(data) {
+  }).then(function(data: any) {
     t.equal(data, 1);
   });
 });
@@ -72,7 +72,7 @@ test('co(function) -> resolve promise', (t) => {
 
   task(function() {
     return Promise.resolve(1);
-  }).then(function(data) {
+  }).then(function(data: any) {
     t.equal(data, 1);
   });
 });
@@ -82,7 +82,7 @@ test('co(function) -> reject promise', (t) => {
 
   task(function() {
     return Promise.reject(1);
-  }).catch(function(data) {
+  }).catch(function(data: any) {
     t.equal(data, 1);
   });
 });
@@ -96,7 +96,7 @@ test('co(function) -> catch errors', (t) => {
     .then(function() {
       throw new Error('nope');
     })
-    .catch(function(err) {
+    .catch(function(err: any) {
       t.equal(err.message, 'boom');
     });
 });

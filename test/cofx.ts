@@ -1,10 +1,25 @@
-import { task, call, all, spawn, delay, factory, race } from '../src/index';
+import {
+  task,
+  call,
+  all,
+  spawn,
+  delay,
+  factory,
+  race,
+  fork,
+} from '../src/index';
 import fetch from 'node-fetch';
 import * as test from 'tape';
 import * as nock from 'nock';
 import { genTester, yields } from 'gen-tester';
 
 const noop = () => {};
+const canceller = (ms: number = 150) =>
+  new Promise((resolve) => {
+    setTimeout(() => {
+      resolve('cancel it');
+    }, ms);
+  });
 
 function* genCall() {
   const resp = yield call(fetch, 'http://httpbin.org/get');
@@ -38,7 +53,7 @@ test('task runtime call generator', (t) => {
 
   t.plan(1);
   task(two)
-    .then((data) => {
+    .then((data: any) => {
       t.equal(data, 'hi');
     })
     .catch(console.error);
@@ -50,7 +65,7 @@ test('task runtime call a normal function', (t) => {
     return 'hi';
   }
 
-  task(one).then((data) => {
+  task(one).then((data: any) => {
     t.equal(data, 'hi');
   });
 });
@@ -65,7 +80,7 @@ test('task runtime call effect normal function', (t) => {
     return result;
   }
 
-  task(two).then((data) => {
+  task(two).then((data: any) => {
     t.equal(data, 'hi');
   });
 });
@@ -80,7 +95,7 @@ test('task runtime all effect array', (t) => {
     return result;
   }
 
-  task(two).then((data) => {
+  task(two).then((data: any) => {
     t.deepEqual(data, ['hi', 'hi']);
   });
 });
@@ -98,9 +113,70 @@ test('task runtime all effect object', (t) => {
     return result;
   }
 
-  task(two).then((data) => {
+  task(two).then((data: any) => {
     t.deepEqual(data, { one: 'hi', two: 'hi' });
   });
+});
+
+test('task runtime cancel', (t) => {
+  t.plan(1);
+
+  function* one() {
+    try {
+      yield delay(10000);
+      return 'hi';
+    } catch (err) {
+      t.equal(true, true);
+    }
+  }
+
+  const cancel = canceller();
+  task({ fn: one, cancel }).catch(console.log);
+});
+
+test('task fork should cancel', (t) => {
+  t.plan(1);
+
+  function* two() {
+    try {
+      yield delay(10000);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  function* one() {
+    try {
+      yield fork(two);
+      yield delay(10000);
+    } catch (err) {
+      t.equal(true, true);
+    }
+  }
+
+  const cancel = canceller();
+  task({ fn: one, cancel }).catch(console.log);
+});
+
+test('task spawn should not cancel', (t) => {
+  t.plan(2);
+
+  function* two() {
+    yield delay(100);
+    t.equal(true, true);
+  }
+
+  function* one() {
+    try {
+      yield spawn(two);
+      yield delay(10000);
+    } catch (err) {
+      t.equal(true, true);
+    }
+  }
+
+  const cancel = canceller();
+  task({ fn: one, cancel }).catch(console.log);
 });
 
 test('call effect', (t) => {
@@ -266,6 +342,36 @@ test('race obj runtime', (t) => {
   };
 
   task(go).then(assertData);
+});
+
+test('when cancelling a task', (t) => {
+  t.plan(2);
+  const msg = 'cancel the task!';
+
+  function* waiting(duration: number) {
+    try {
+      yield delay(duration);
+    } catch (err) {
+      console.log(err);
+      t.equal(msg, err, 'generator catch - error message should match');
+    }
+  }
+
+  const cancel = new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(msg);
+    }, 100);
+  });
+
+  task({ fn: waiting, args: [200], cancel })
+    .then(console.log)
+    .catch((err: any) => {
+      t.deepEqual(
+        { error: msg },
+        err,
+        'task catch - error message should match',
+      );
+    });
 });
 
 /* function* sp() {
