@@ -14,8 +14,8 @@ A node and javascript library that helps developers describe side-effects as dat
 Maintaining side-effects, especially IO, are difficult to write in javascript.  They are asynchronous,
 they require effort to prevent callback hell, and they can be difficult to test.
 
-This library leverages the power of generators to help control the flow of side-effects as well as 
-create a platform to easily test those side-effects.  The key feature of this library is to 
+This library leverages the power of generators to help control the flow of side-effects as well as
+create a platform to easily test those side-effects.  The key feature of this library is to
 describe those side-effects as data.
 
 Instead of a generator activating side-effects (e.g. making HTTP requests)
@@ -28,18 +28,18 @@ this library also helps reduce the level of nesting when dealing with asynchrono
 This library was inspired by [redux-saga](https://github.com/redux-saga/redux-saga)
 and [re-frame](https://github.com/Day8/re-frame).  Whenever I left the world
 of react/redux and wanted to test my async/await/generator functions it would require
-mocking/intercepting HTTP requests which is a terrible developer experience.  
-Instead this library does all the heavy lifting of activating the side-effects while 
+mocking/intercepting HTTP requests which is a terrible developer experience.
+Instead this library does all the heavy lifting of activating the side-effects while
 the end-developer can write code in a declarative manner.
 
 This technique is very popular, the prime example is `react`.  Testing react components
-is easy because the components are functions that accept state and then return data as HTML.  
+is easy because the components are functions that accept state and then return data as HTML.
 
 ```js
 const view = f(state);
 ```
 
-The functions themselves do not mutate the DOM, they tell the `react` runtime how to mutate the DOM.  
+The functions themselves do not mutate the DOM, they tell the `react` runtime how to mutate the DOM.
 This is a critical distinction and pivotal for understanding how this library operates.
 Effectively the end-developer only concerns itself with the shape of the data being returned from their
 react components and the react runtime does the rest.
@@ -89,6 +89,33 @@ function* fetchBin() {
 // `task` is in charge of handling the actual side-effects
 // all user code does not contain any side-effects because they return json objects
 task(fetchBin)
+  .then(console.log)
+  .catch(console.error);
+```
+
+## Cancelling a task (added v2.0)
+
+Cancelling a task is possible by passing a promise into the `task` that once resolved, will
+cancel the task.
+
+```js
+import { task, delay } from 'cofx';
+
+function* waiting(duration) {
+  try {
+    yield delay(duration);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+const cancel = new Promise((resolve) => {
+  setTimeout(() => {
+    resolve('cancel the task!');
+  }, 500);
+});
+
+task({ fn: waiting, args: [1000], cancel })
   .then(console.log)
   .catch(console.error);
 ```
@@ -248,9 +275,39 @@ function* example() {
 task(example);
 ```
 
+### fork (added v2.0)
+
+Forks (attached) an effect without the generator waiting for that effect to finish.  If
+a task gets cancelled, this fork will also be cancelled.
+
+```js
+const { task, fork } = require('cofx');
+const fetch = require('node-fetch');
+
+function effect() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+      console.log('ACTIVATE');
+    }, 5000);
+  });
+}
+
+function* example() {
+  yield fork(effect);
+  console.log('COOL');
+}
+
+task(example);
+// COOL
+// ... five seconds later
+// ACTIVATE
+```
+
 ### spawn
 
-Spawns an effect without the generator waiting for that effect to finish.
+Spawns (dettached) an effect without the generator waiting for that effect to finish.  If
+a task gets cancelled, this spawn will *NOT* be cancelled.
 
 ```js
 const { task, spawn } = require('cofx');
@@ -298,8 +355,8 @@ task(example);
 ### factory
 
 This is what creates `task`.  This allows end-developers to build their own
-effect middleware.  When using middleware it must return a promise, something that 
-`co` understands how to handle, and to allow other middleware to handle the effect 
+effect middleware.  When using middleware it must return a promise, something that
+`co` understands how to handle, and to allow other middleware to handle the effect
 as well, you must return `next(effect)`;
 
 #### error effect handler
@@ -354,5 +411,5 @@ customTask(example).then((now) => {
   console.log(now);
 });
 
-// Fri Sep 21 2018 13:44:24 GMT-0400 (Eastern Daylight Time) 
+// Fri Sep 21 2018 13:44:24 GMT-0400 (Eastern Daylight Time)
 ```

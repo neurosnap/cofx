@@ -2,8 +2,8 @@
   "baseUrl": "types",
   "typeRoots": ["types"],
   "compilerOptions": {
-    "noImplicitAny": true,
-    "noUnusedLocals": true,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
     "removeComments": true,
     "preserveConstEnums": true,
     "sourceMap": true,

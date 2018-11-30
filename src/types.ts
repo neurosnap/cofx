@@ -27,4 +27,19 @@ export type NextFn = (...args: any[]) => Middleware;
 export type Promisify = (p: any) => Promise<any>;
 export type Middleware = (
   next: NextFn,
-) => (effect: Effect, promisify: Promisify) => Middleware;
+) => (
+  effect: Effect,
+  promisify: Promisify,
+  cancelPromise: Promise<any>,
+) => Middleware;
+
+export interface Runtime<V> {
+  fn: CoFn<V>;
+  args?: any[];
+  cancel?: any;
+}
+export interface EffectHandler {
+  effect: Effect;
+  promisify: Promisify;
+  cancel: Promise<any>;
+}

@@ -7,7 +7,7 @@ test('yield <invalid> should throw an error', (t) => {
   task(function*() {
     yield null;
     throw new Error('lol');
-  }).catch((err) => {
+  }).catch((err: any) => {
     t.ok(err instanceof TypeError);
     t.ok(~err.message.indexOf('You may only yield'));
   });

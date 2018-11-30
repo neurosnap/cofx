@@ -7,35 +7,54 @@ import {
   DelayEffect,
   NextFn,
   AllEffects,
+  EffectHandler,
 } from './types';
+import speculation from './speculation';
 
 const noop = () => {};
-const typeDetector = (type: string) => (value: any) =>
+export const typeDetector = (type: string) => (value: any) =>
   value && isObject(value) && value.type === type;
 
-const CALL = 'CALL';
-const call = (fn: CoFn | any[], ...args: any[]): CallEffect => ({
+export const CALL = 'CALL';
+export const call = (fn: CoFn | any[], ...args: any[]): CallEffect => ({
   type: CALL,
   fn,
   args,
 });
 const isCall = typeDetector(CALL);
-function callEffect({ fn, args }: { fn: CoFn; args: any[] }) {
-  if (Array.isArray(fn)) {
-    const [obj, fnName, ...fargs] = fn;
-    return obj[fnName](...fargs);
-  }
+function callEffect(
+  { fn, args }: { fn: CoFn; args: any[] },
+  promisify: Promisify,
+  cancel: Promise<any>,
+) {
+  return speculation((resolve, reject, onCancel) => {
+    if (Array.isArray(fn)) {
+      const [obj, fnName, ...fargs] = fn;
+      return resolve(obj[fnName](...fargs));
+    }
 
-  const gen = fn.call(this, ...args);
-  if (!gen || typeof gen.next !== 'function') {
-    return Promise.resolve(gen);
-  }
+    const gen = fn.call(this, ...args);
 
-  return gen;
+    if (!gen || typeof gen.next !== 'function') {
+      return resolve(gen);
+    }
+
+    promisify(gen)
+      .then(resolve)
+      .catch(reject);
+
+    onCancel(() => {
+      const msg = 'call has been cancelled';
+      if (typeof gen.next === 'function') {
+        gen.throws(msg);
+      }
+      reject(msg);
+    });
+  }, cancel);
 }
 
-const ALL = 'ALL';
-const all = (effects: AllEffects) => ({
+export const ALL = 'ALL';
+export const all = (effects: AllEffects) => ({
   type: ALL,
   effects,
 });
@@ -45,23 +64,28 @@ function allEffect({ effects }: { effects: AllEffects }, promisify: Promisify) {
 
   if (Array.isArray(effects)) {
     const mapFn = (effect: Effect) =>
-      effectHandler.call(ctx, effect, promisify);
-    return effects.map(mapFn);
+      effectHandler.call(ctx, { effect, promisify });
+    const eff = effects.map(mapFn);
+    return eff;
   }
 
   if (isObject(effects)) {
     const reduceFn = (acc: { [key: string]: Promise<any> }, key: string) => {
       return {
         ...acc,
-        [key]: effectHandler.call(ctx, effects[key], promisify),
+        [key]: effectHandler.call(ctx, { effect: effects[key], promisify }),
       };
     };
-    return Object.keys(effects).reduce(reduceFn, {});
+    const eff: { [key: string]: any } = Object.keys(effects).reduce(
+      reduceFn,
+      {},
+    );
+    return eff;
   }
 }
 
-const RACE = 'RACE';
-const race = (effects: AllEffects) => ({
+export const RACE = 'RACE';
+export const race = (effects: AllEffects) => ({
   type: RACE,
   effects,
 });
@@ -74,7 +98,7 @@ function raceEffect(
 
   if (Array.isArray(effects)) {
     const mapFn = (effect: Effect) =>
-      promisify(effectHandler.call(ctx, effect, promisify));
+      promisify(effectHandler.call(ctx, { effect, promisify }));
     const eff = effects.map(mapFn);
     return Promise.race(eff);
   }
@@ -82,14 +106,14 @@ function raceEffect(
   const keys = Object.keys(effects);
   return Promise.race(
     keys.map((key: string) => {
-      return promisify(effectHandler.call(ctx, effects[key], promisify)).then(
-        (result) => {
-          return {
-            winner: key,
-            result,
-          };
-        },
-      );
+      return promisify(
+        effectHandler.call(ctx, { effect: effects[key], promisify }),
+      ).then((result) => {
+        return {
+          winner: key,
+          result,
+        };
+      });
     }),
   ).then((result) => {
     return keys.reduce((acc: { [key: string]: any }, key: string) => {
@@ -104,45 +128,71 @@ function raceEffect(
   });
 }
 
-const SPAWN = 'SPAWN';
-const spawn = (fn: CoFn, ...args: any[]) => ({ type: SPAWN, fn, args });
+export const FORK = 'FORK';
+export const fork = (fn: CoFn, ...args: any[]) => ({ type: FORK, fn, args });
+const isFork = typeDetector(FORK);
+function forkEffect(
+  { fn, args }: { fn: CoFn; args: any[] },
+  promisify: Promisify,
+  cancel: Promise<any>,
+) {
+  return speculation((resolve, reject) => {
+    promisify(fn.call(this, ...args))
+      .then(noop)
+      .catch(reject);
+    resolve();
+  }, cancel);
+}
+
+export const SPAWN = 'SPAWN';
+export const spawn = (fn: CoFn, ...args: any[]) => ({ type: SPAWN, fn, args });
 const isSpawn = typeDetector(SPAWN);
 function spawnEffect(
   { fn, args }: { fn: CoFn; args: any[] },
   promisify: Promisify,
 ) {
-  return new Promise((resolve, reject) => {
-    promisify(fn.call(this, ...args)).then(noop);
+  return speculation((resolve, reject, onCancel) => {
+    promisify(fn.call(this, ...args))
+      .then(noop)
+      .catch(reject);
     resolve();
+
+    onCancel(() => {
+      reject();
+    });
   });
 }
 
-const DELAY = 'DELAY';
-const delay = (ms: number): DelayEffect => ({ type: DELAY, ms });
+export const DELAY = 'DELAY';
+export const delay = (ms: number): DelayEffect => ({ type: DELAY, ms });
 const isDelay = typeDetector(DELAY);
-function delayEffect({ ms }: { ms: number }) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
+function delayEffect({ ms }: { ms: number }, cancel: Promise<any>) {
+  return speculation((resolve, reject, onCancel) => {
+    const timerId = setTimeout(() => {
       resolve();
     }, ms);
-  });
+
+    onCancel(() => {
+      clearTimeout(timerId);
+      reject('delay has been cancelled.');
+    });
+  }, cancel);
 }
 
-function effectHandler(effect: Effect, promisify: Promisify) {
+export function effectHandler({ effect, promisify, cancel }: EffectHandler) {
   const ctx = this;
-  if (isCall(effect)) return callEffect.call(ctx, effect);
+  if (isCall(effect)) return callEffect.call(ctx, effect, promisify, cancel);
   if (isAll(effect)) return allEffect.call(ctx, effect, promisify);
   if (isRace(effect)) return raceEffect.call(ctx, effect, promisify);
   if (isSpawn(effect)) return spawnEffect.call(ctx, effect, promisify);
-  if (isDelay(effect)) return delayEffect.call(ctx, effect);
+  if (isFork(effect)) return forkEffect.call(ctx, effect, promisify, cancel);
+  if (isDelay(effect)) return delayEffect.call(ctx, effect, cancel);
   return effect;
 }
 
-function effectMiddleware(next: NextFn) {
-  return (effect: Effect, promisify: Promisify) => {
-    const nextEffect = effectHandler(effect, promisify);
+export function effectMiddleware(next: NextFn) {
+  return (effect: Effect, promisify: Promisify, cancel: Promise<any>) => {
+    const nextEffect = effectHandler({ effect, promisify, cancel });
     return next(nextEffect);
   };
 }
-
-export { effectMiddleware, delay, call, spawn, all, race };

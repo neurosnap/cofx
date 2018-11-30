@@ -41,7 +41,7 @@ test('co(fn*) with a generator function should catch errors', (t) => {
     function() {
       throw new Error('wtf');
     },
-    function(err) {
+    function(err: any) {
       t.ok(err);
       t.ok(err.message == 'boom');
     },
