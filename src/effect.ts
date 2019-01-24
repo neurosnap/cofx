@@ -11,7 +11,7 @@ import {
 } from './types';
 import speculation from './speculation';
 
-const noop = () => {};
+const noop = (...args: any[]) => {};
 export const typeDetector = (type: string) => (value: any) =>
   value && isObject(value) && value.type === type;
 
@@ -39,14 +39,17 @@ function callEffect(
       return resolve(gen);
     }
 
-    promisify(gen)
+    promisify(gen, cancel)
       .then(resolve)
       .catch(reject);
 
-    onCancel(() => {
-      const msg = 'call has been cancelled';
+    onCancel((msg) => {
       if (typeof gen.next === 'function') {
-        gen.throws(msg);
+        try {
+          gen.throw(msg);
+        } catch (err) {
+          console.log(err);
+        }
       }
       reject(msg);
     });
@@ -59,12 +62,16 @@ export const all = (effects: AllEffects) => ({
   effects,
 });
 const isAll = typeDetector(ALL);
-function allEffect({ effects }: { effects: AllEffects }, promisify: Promisify) {
+function allEffect(
+  { effects }: { effects: AllEffects },
+  promisify: Promisify,
+  cancel: Promise<any>,
+) {
   const ctx = this;
 
   if (Array.isArray(effects)) {
     const mapFn = (effect: Effect) =>
-      effectHandler.call(ctx, { effect, promisify });
+      effectHandler.call(ctx, { effect, promisify, cancel });
     const eff = effects.map(mapFn);
     return eff;
   }
@@ -73,7 +80,11 @@ function allEffect({ effects }: { effects: AllEffects }, promisify: Promisify) {
     const reduceFn = (acc: { [key: string]: Promise<any> }, key: string) => {
       return {
         ...acc,
-        [key]: effectHandler.call(ctx, { effect: effects[key], promisify }),
+        [key]: effectHandler.call(ctx, {
+          effect: effects[key],
+          promisify,
+          cancel,
+        }),
       };
     };
     const eff: { [key: string]: any } = Object.keys(effects).reduce(
@@ -93,21 +104,38 @@ const isRace = typeDetector(RACE);
 function raceEffect(
   { effects }: { effects: AllEffects },
   promisify: Promisify,
+  genCancel: Promise<any>,
 ) {
   const ctx = this;
+  // super hacky way to cancel a chain of promises/generators
+  let forceCancel = noop;
+  const cancel = new Promise((resolve) => {
+    if (genCancel && typeof genCancel.then === 'function') {
+      genCancel.then(resolve);
+    }
+    forceCancel = resolve;
+  });
 
   if (Array.isArray(effects)) {
-    const mapFn = (effect: Effect) =>
-      promisify(effectHandler.call(ctx, { effect, promisify }));
+    const mapFn = (effect: Effect) => {
+      return promisify(effectHandler.call(ctx, { effect, promisify, cancel }));
+    };
     const eff = effects.map(mapFn);
-    return Promise.race(eff);
+    return Promise.race(eff)
+      .then((result) => {
+        forceCancel('cancelled by race');
+        return result;
+      })
+      .catch((err) => {
+        forceCancel(err);
+      });
   }
 
   const keys = Object.keys(effects);
   return Promise.race(
     keys.map((key: string) => {
       return promisify(
-        effectHandler.call(ctx, { effect: effects[key], promisify }),
+        effectHandler.call(ctx, { effect: effects[key], promisify, cancel }),
       ).then((result) => {
         return {
           winner: key,
@@ -116,6 +144,7 @@ function raceEffect(
       });
     }),
   ).then((result) => {
+    forceCancel('cancelled by race');
     return keys.reduce((acc: { [key: string]: any }, key: string) => {
       if (result.winner === key) {
         acc[key] = result.result;
@@ -182,8 +211,8 @@ function delayEffect({ ms }: { ms: number }, cancel: Promise<any>) {
 export function effectHandler({ effect, promisify, cancel }: EffectHandler) {
   const ctx = this;
   if (isCall(effect)) return callEffect.call(ctx, effect, promisify, cancel);
-  if (isAll(effect)) return allEffect.call(ctx, effect, promisify);
-  if (isRace(effect)) return raceEffect.call(ctx, effect, promisify);
+  if (isAll(effect)) return allEffect.call(ctx, effect, promisify, cancel);
+  if (isRace(effect)) return raceEffect.call(ctx, effect, promisify, cancel);
   if (isSpawn(effect)) return spawnEffect.call(ctx, effect, promisify);
   if (isFork(effect)) return forkEffect.call(ctx, effect, promisify, cancel);
   if (isDelay(effect)) return delayEffect.call(ctx, effect, cancel);

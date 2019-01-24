@@ -20,5 +20,6 @@
   ],
   "include": [
     "./src/index.ts",
+    "./test/**.ts"
   ]
 }

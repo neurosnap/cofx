@@ -24,7 +24,7 @@ export interface AllEffect {
 }
 export type Effect = { type: string } & { [key: string]: any };
 export type NextFn = (...args: any[]) => Middleware;
-export type Promisify = (p: any) => Promise<any>;
+export type Promisify = (p: any, cancel?: Promise<any>) => Promise<any>;
 export type Middleware = (
   next: NextFn,
 ) => (
