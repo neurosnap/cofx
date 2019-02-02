@@ -22,7 +22,8 @@ export default function runtime<V>({
 }: BaseRuntime<V>) {
   const ctx = this;
 
-  function promisify(obj: any): Promise<any> {
+  function promisify(obj: any, genCancel?: Promise<any>): Promise<any> {
+    const nCancel = genCancel || cancel;
     if (!obj) return obj;
     if (isPromise(obj)) return obj;
     if (
@@ -30,10 +31,15 @@ export default function runtime<V>({
       isGeneratorFunction(obj) ||
       isGenerator(obj)
     ) {
-      return runtime.call(ctx, { fn: obj, cancel, middleware });
+      return runtime.call(ctx, {
+        fn: obj,
+        cancel: nCancel,
+        middleware,
+      });
     }
     if (Array.isArray(obj)) {
-      return Promise.all(obj.map(promisify));
+      const eff = obj.map((o) => promisify(o, nCancel));
+      return Promise.all(eff);
     }
     if (isObject(obj)) return objectToPromise.call(ctx, obj);
     return obj;

@@ -312,7 +312,9 @@ test('race array runtime', (t) => {
     t.equal(data, 2, 'data should equal expected data');
   };
 
-  task(go).then(assertData);
+  task(go)
+    .then(assertData)
+    .catch((msg: any) => console.log('CANCELLED', msg));
 });
 
 test('race obj runtime', (t) => {
@@ -342,6 +344,97 @@ test('race obj runtime', (t) => {
   };
 
   task(go).then(assertData);
+});
+
+test('race array cancel', (t) => {
+  function* one() {
+    yield delay(1000);
+    t.fail('should not hit');
+
+    return 1;
+  }
+  function* two() {
+    yield delay(100);
+    return 2;
+  }
+  function* go() {
+    const res = yield race([call(one), call(two)]);
+    return res;
+  }
+
+  t.plan(1);
+  const assertData = (data: any) => {
+    t.equal(data, 2, 'data should equal expected data');
+  };
+
+  task(go).then(assertData);
+});
+
+test('race obj cancel', (t) => {
+  function* one() {
+    try {
+      yield delay(1000);
+    } catch (err) {
+      t.pass('should hit');
+    }
+
+    return 1;
+  }
+  function* two() {
+    yield delay(100);
+    return 2;
+  }
+  function* go() {
+    const res = yield race({
+      one: call(one),
+      two: call(two),
+    });
+    return res;
+  }
+
+  t.plan(2);
+  const assertData = (data: any) => {
+    t.deepEqual(
+      data,
+      { one: undefined, two: 2 },
+      'data should equal expected data',
+    );
+  };
+
+  task(go).then(assertData);
+});
+
+test('cancel task race array cancel', (t) => {
+  function* one() {
+    try {
+      yield delay(5000);
+      return 1;
+    } catch (err) {
+      t.pass('adelay should cancel');
+    }
+  }
+  function* two() {
+    try {
+      yield delay(2000);
+      return 2;
+    } catch (err) {
+      t.pass('bdelay should cancel');
+    }
+  }
+
+  function* go() {
+    try {
+      const res = yield race([call(one), call(two)]);
+      return res;
+    } catch (err) {
+      t.pass('race should cancel');
+    }
+  }
+
+  t.plan(3);
+
+  const cancel = canceller();
+  task({ fn: go, cancel }).catch(console.log);
 });
 
 test('when cancelling a task', (t) => {
