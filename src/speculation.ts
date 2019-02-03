@@ -1,4 +1,4 @@
-type Fn = (...args: any[]) => void;
+type Fn = (...args: any[]) => any;
 type Speculation<V> = (
   resolve: Fn,
   reject: Fn,
@@ -31,7 +31,7 @@ export default function speculation<V = any>(
       _reject(input);
     };
 
-    const onCancel = (handleCancel: Fn) => {
+    const onCancel = (handleCancel: Fn): Promise<any> => {
       const maybeHandleCancel = (value: any) => {
         if (!isSettled) {
           handleCancel(value);
@@ -39,7 +39,7 @@ export default function speculation<V = any>(
       };
 
       if (!cancel) {
-        return;
+        return Promise.resolve();
       }
 
       return (

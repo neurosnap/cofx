@@ -3,26 +3,38 @@ export type GenFn<V = any> = (...args: any[]) => IterableIterator<V>;
 export type CoFn<V = any> = GenFn<V> | Fn;
 
 export type TaskFn<V> = (fn: CoFn<V>, ...args: any[]) => Promise<any>;
-export interface CallEffect {
+export interface CallEffectDescriptor {
   type: 'CALL';
   fn: Fn | any[];
   args: any[];
 }
-export interface SpawnEffect {
+export interface SpawnEffectDescriptor {
   type: 'SPAWN';
   fn: Fn;
   args: any[];
 }
-export interface DelayEffect {
+export interface DelayEffectDescriptor {
   type: 'DELAY';
   ms: number;
 }
-export type AllEffects = Effect[] | { [key: string]: Effect };
-export interface AllEffect {
-  type: 'ALL';
-  effects: AllEffects;
+
+export interface RaceEffectDescriptor<T> {
+  type: 'RACE';
+  effects: AllEffect<T>;
 }
-export type Effect = { type: string } & { [key: string]: any };
+export interface AllEffectDescriptor<T> {
+  type: 'ALL';
+  effects: AllEffect<T>;
+}
+export type AllEffect<T> = T[] | { [key: string]: T };
+export type Effect =
+  | CallEffectDescriptor
+  | SpawnEffectDescriptor
+  | DelayEffectDescriptor;
+
+export type CombinatorEffect<T> =
+  | RaceEffectDescriptor<T>
+  | AllEffectDescriptor<T>;
 export type NextFn = (...args: any[]) => Middleware;
 export type Promisify = (p: any, cancel?: Promise<any>) => Promise<any>;
 export type Middleware = (
@@ -33,13 +45,8 @@ export type Middleware = (
   cancelPromise: Promise<any>,
 ) => Middleware;
 
-export interface Runtime<V> {
-  fn: CoFn<V>;
-  args?: any[];
-  cancel?: any;
-}
 export interface EffectHandler {
-  effect: Effect;
+  effect: any;
   promisify: Promisify;
   cancel: Promise<any>;
 }

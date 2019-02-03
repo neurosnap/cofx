@@ -9,7 +9,7 @@ test('co.call(this) should pass the context', (t) => {
   t.plan(1);
 
   // @ts-ignore
-  task.call(ctx, function*() {
+  task.call(ctx, function*(this: any) {
     t.ok(ctx == this);
   });
 });

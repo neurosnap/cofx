@@ -1,12 +1,12 @@
 import { isPromise, isGenerator, isGeneratorFunction, isObject } from './is';
-import { CoFn, Middleware } from './types';
+import { Middleware } from './types';
 import speculation from './speculation';
 import applyMiddleware from './apply-middleware';
 
-interface BaseRuntime<V> {
-  fn: CoFn<V>;
-  args?: any[];
-  cancel?: any;
+interface BaseRuntime<Fn extends (...args: any[]) => any> {
+  fn: Fn;
+  args?: Parameters<Fn>;
+  cancel?: Promise<any>;
   middleware?: Middleware[];
 }
 
@@ -14,12 +14,10 @@ interface BaseRuntime<V> {
  * Execute the generator function or a generator
  * and return a promise.
  */
-export default function runtime<V>({
-  fn,
-  args,
-  cancel,
-  middleware,
-}: BaseRuntime<V>) {
+export default function runtime<V, Fn extends (...args: any[]) => any>(
+  this: any,
+  { fn, args, cancel, middleware = [] }: BaseRuntime<Fn>,
+): Promise<V> {
   const ctx = this;
 
   function promisify(obj: any, genCancel?: Promise<any>): Promise<any> {
@@ -33,6 +31,7 @@ export default function runtime<V>({
     ) {
       return runtime.call(ctx, {
         fn: obj,
+        args: [],
         cancel: nCancel,
         middleware,
       });
@@ -45,7 +44,7 @@ export default function runtime<V>({
     return obj;
   }
 
-  function objectToPromise(obj: { [key: string]: CoFn<V> }) {
+  function objectToPromise(obj: { [key: string]: any }) {
     const results = { ...obj };
     const keys = Object.keys(obj);
     const promises: Promise<any>[] = [];
@@ -77,7 +76,7 @@ export default function runtime<V>({
   // which leads to memory leak errors.
   // see https://github.com/tj/co/issues/180
   return speculation((resolve, reject, onCancel) => {
-    const iter = typeof fn === 'function' ? fn.apply(ctx, args) : fn;
+    const iter = typeof fn === 'function' ? fn.apply(ctx, args || []) : fn;
     if (!iter || typeof iter.next !== 'function') {
       return resolve(iter);
     }

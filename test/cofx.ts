@@ -13,7 +13,7 @@ import * as test from 'tape';
 import * as nock from 'nock';
 import { genTester, yields } from 'gen-tester';
 
-const noop = () => {};
+const noop = (...args: any[]) => {};
 const canceller = (ms: number = 150) =>
   new Promise((resolve) => {
     setTimeout(() => {
@@ -182,7 +182,7 @@ test('task spawn should not cancel', (t) => {
 test('call effect', (t) => {
   t.plan(1);
 
-  const respValue = { resp: 'value', json: 'hi' };
+  const respValue = { resp: 'value', json: () => 'hi' };
   const returnValue = { data: 'value', extra: 'stuff' };
   const tester = genTester(genCall);
   const { actual, expected } = tester(
