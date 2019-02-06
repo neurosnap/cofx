@@ -6,5 +6,6 @@ export * from './effect';
 export * from './types';
 
 export const task = factoryBase(effectMiddleware);
-export const factory = (...middleware: Middleware[]) =>
-  factoryBase.apply(this, [...middleware, effectMiddleware]);
+export function factory(this: any, ...middleware: Middleware[]) {
+  return factoryBase.apply(this, [...middleware, effectMiddleware]);
+}

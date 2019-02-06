@@ -1,13 +1,15 @@
 import { isObject } from './is';
 import {
-  CallEffect,
+  CallEffectDescriptor,
   Effect,
   Promisify,
   CoFn,
-  DelayEffect,
+  DelayEffectDescriptor,
   NextFn,
-  AllEffects,
   EffectHandler,
+  AllEffectDescriptor,
+  RaceEffectDescriptor,
+  SpawnEffectDescriptor,
 } from './types';
 import speculation from './speculation';
 
@@ -16,14 +18,33 @@ export const typeDetector = (type: string) => (value: any) =>
   value && isObject(value) && value.type === type;
 
 export const CALL = 'CALL';
-export const call = (fn: CoFn | any[], ...args: any[]): CallEffect => ({
-  type: CALL,
-  fn,
-  args,
-});
+
+export function call<Fn extends (...args: any[]) => any>(
+  fn: Fn,
+  ...args: Parameters<Fn>
+): CallEffectDescriptor;
+export function call<
+  Ctx extends { [P in Name]: (this: Ctx, ...args: any[]) => any },
+  Name extends string
+>(
+  ctxAndFnName: [Ctx, Name],
+  ...args: Parameters<Ctx[Name]>
+): CallEffectDescriptor;
+export function call<Fn extends (...args: any[]) => any>(
+  fn: Fn,
+  ...args: Parameters<Fn>
+): CallEffectDescriptor {
+  return {
+    type: CALL,
+    fn,
+    args,
+  };
+}
+
 const isCall = typeDetector(CALL);
-function callEffect(
-  { fn, args }: { fn: CoFn; args: any[] },
+function callEffect<Fn extends (...args: any[]) => any>(
+  this: any,
+  { fn, args }: { fn: Fn | any[]; args: Parameters<Fn> },
   promisify: Promisify,
   cancel: Promise<any>,
 ) {
@@ -57,16 +78,27 @@ function callEffect(
 }
 
 export const ALL = 'ALL';
-export const all = (effects: AllEffects) => ({
-  type: ALL,
-  effects,
-});
+export function all<T>(effects: T[]): AllEffectDescriptor<T>;
+export function all<T>(effects: { [key: string]: T }): AllEffectDescriptor<T>;
+export function all<T>(effects: { [key: string]: T }): AllEffectDescriptor<T> {
+  return {
+    type: ALL,
+    effects,
+  };
+}
 const isAll = typeDetector(ALL);
 function allEffect(
-  { effects }: { effects: AllEffects },
+  this: any,
+  { effects }: { effects: any[] },
   promisify: Promisify,
   cancel: Promise<any>,
-) {
+): Promise<any>[];
+function allEffect(
+  this: any,
+  { effects }: { effects: any },
+  promisify: Promisify,
+  cancel: Promise<any>,
+): Promise<any>[] | { [key: string]: Promise<any> } {
   const ctx = this;
 
   if (Array.isArray(effects)) {
@@ -76,36 +108,44 @@ function allEffect(
     return eff;
   }
 
-  if (isObject(effects)) {
-    const reduceFn = (acc: { [key: string]: Promise<any> }, key: string) => {
-      return {
-        ...acc,
-        [key]: effectHandler.call(ctx, {
-          effect: effects[key],
-          promisify,
-          cancel,
-        }),
-      };
+  const reduceFn = (acc: { [key: string]: Promise<any> }, key: string) => {
+    return {
+      ...acc,
+      [key]: effectHandler.call(ctx, {
+        effect: effects[key] as any,
+        promisify,
+        cancel,
+      }),
     };
-    const eff: { [key: string]: any } = Object.keys(effects).reduce(
-      reduceFn,
-      {},
-    );
-    return eff;
-  }
+  };
+  const eff: { [key: string]: any } = Object.keys(effects).reduce(reduceFn, {});
+  return eff;
 }
 
 export const RACE = 'RACE';
-export const race = (effects: AllEffects) => ({
-  type: RACE,
-  effects,
-});
+export function race<T>(effects: T[]): RaceEffectDescriptor<T>;
+export function race<T>(effects: { [key: string]: T }): RaceEffectDescriptor<T>;
+export function race<T>(effects: {
+  [key: string]: T;
+}): RaceEffectDescriptor<T> {
+  return {
+    type: RACE,
+    effects,
+  };
+}
 const isRace = typeDetector(RACE);
 function raceEffect(
-  { effects }: { effects: AllEffects },
+  this: any,
+  { effects }: { effects: any },
   promisify: Promisify,
   genCancel: Promise<any>,
-) {
+): Promise<any>;
+function raceEffect(
+  this: any,
+  { effects }: { effects: any[] },
+  promisify: Promisify,
+  genCancel: Promise<any>,
+): Promise<any> {
   const ctx = this;
   // super hacky way to cancel a chain of promises/generators
   let forceCancel = noop;
@@ -157,16 +197,32 @@ function raceEffect(
   });
 }
 
+type Fn = (...args: any[]) => any;
 export const FORK = 'FORK';
-export const fork = (fn: CoFn, ...args: any[]) => ({ type: FORK, fn, args });
+export const fork = (fn: Fn | any[], ...args: any[]) => ({
+  type: FORK,
+  fn,
+  args,
+});
 const isFork = typeDetector(FORK);
 function forkEffect(
-  { fn, args }: { fn: CoFn; args: any[] },
+  this: any,
+  { fn, args }: { fn: Fn | any[]; args: any[] },
   promisify: Promisify,
   cancel: Promise<any>,
 ) {
+  if (Array.isArray) {
+    return speculation((resolve, reject) => {
+      const [obj, fnName] = fn as any[];
+      promisify(obj[fnName](...args))
+        .then(noop)
+        .catch(reject);
+      resolve();
+    }, cancel);
+  }
+
   return speculation((resolve, reject) => {
-    promisify(fn.call(this, ...args))
+    promisify((fn as Fn).call(this, ...args))
       .then(noop)
       .catch(reject);
     resolve();
@@ -177,6 +233,7 @@ export const SPAWN = 'SPAWN';
 export const spawn = (fn: CoFn, ...args: any[]) => ({ type: SPAWN, fn, args });
 const isSpawn = typeDetector(SPAWN);
 function spawnEffect(
+  this: any,
   { fn, args }: { fn: CoFn; args: any[] },
   promisify: Promisify,
 ) {
@@ -193,7 +250,10 @@ function spawnEffect(
 }
 
 export const DELAY = 'DELAY';
-export const delay = (ms: number): DelayEffect => ({ type: DELAY, ms });
+export const delay = (ms: number): DelayEffectDescriptor => ({
+  type: DELAY,
+  ms,
+});
 const isDelay = typeDetector(DELAY);
 function delayEffect({ ms }: { ms: number }, cancel: Promise<any>) {
   return speculation((resolve, reject, onCancel) => {
@@ -208,14 +268,44 @@ function delayEffect({ ms }: { ms: number }, cancel: Promise<any>) {
   }, cancel);
 }
 
-export function effectHandler({ effect, promisify, cancel }: EffectHandler) {
+export function effectHandler(
+  this: any,
+  { effect, promisify, cancel }: EffectHandler,
+) {
   const ctx = this;
-  if (isCall(effect)) return callEffect.call(ctx, effect, promisify, cancel);
-  if (isAll(effect)) return allEffect.call(ctx, effect, promisify, cancel);
-  if (isRace(effect)) return raceEffect.call(ctx, effect, promisify, cancel);
-  if (isSpawn(effect)) return spawnEffect.call(ctx, effect, promisify);
-  if (isFork(effect)) return forkEffect.call(ctx, effect, promisify, cancel);
-  if (isDelay(effect)) return delayEffect.call(ctx, effect, cancel);
+  if (isCall(effect)) {
+    return callEffect.call(
+      ctx,
+      effect as CallEffectDescriptor,
+      promisify,
+      cancel,
+    );
+  }
+  if (isAll(effect)) {
+    return allEffect.call(ctx, effect, promisify, cancel);
+  }
+  if (isRace(effect)) {
+    return raceEffect.call(
+      ctx,
+      effect as RaceEffectDescriptor<any>,
+      promisify,
+      cancel,
+    );
+  }
+  if (isSpawn(effect)) {
+    return spawnEffect.call(ctx, effect as SpawnEffectDescriptor, promisify);
+  }
+  if (isFork(effect)) {
+    return forkEffect.call(
+      ctx,
+      effect as CallEffectDescriptor,
+      promisify,
+      cancel,
+    );
+  }
+  if (isDelay(effect)) {
+    return delayEffect.call(ctx, effect as DelayEffectDescriptor, cancel);
+  }
   return effect;
 }
 
