@@ -11,6 +11,8 @@ A node and javascript library that helps developers describe side-effects as dat
 
 ## Why?
 
+[Blog article I wrote about it](https://github.com/neurosnap/blog/blob/master/simplify-testing-async-io-in-javascript.md)
+
 Maintaining side-effects, especially IO, are difficult to write in javascript.  They are asynchronous,
 they require effort to prevent callback hell, and they can be difficult to test.
 
@@ -48,7 +50,7 @@ react components and the react runtime does the rest.
 ## References
 
 * [Effects as Data talk by Richard Feldman](https://www.youtube.com/watch?v=6EdXaWfoslc)
-* [react-cofx](https://github.com/neurosnap/react-cofx) async render components
+* [use-cofx](https://github.com/neurosnap/use-cofx) react hook for cofx
 * [redux-cofx](https://github.com/neurosnap/redux-cofx) side-effect middleware for redux
 * [gen-tester](https://github.com/neurosnap/gen-tester) test cofx generators
 
