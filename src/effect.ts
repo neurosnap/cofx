@@ -49,12 +49,13 @@ function callEffect<Fn extends (...args: any[]) => any>(
   cancel: Promise<any>,
 ) {
   return speculation((resolve, reject, onCancel) => {
+    let gen: any;
     if (Array.isArray(fn)) {
       const [obj, fnName, ...fargs] = fn;
-      return resolve(obj[fnName](...fargs));
+      gen = obj[fnName](...fargs);
+    } else {
+      gen = fn.call(this, ...args);
     }
-
-    const gen = fn.call(this, ...args);
 
     if (!gen || typeof gen.next !== 'function') {
       return resolve(gen);
