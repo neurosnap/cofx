@@ -11,7 +11,7 @@ A node and javascript library that helps developers describe side-effects as dat
 
 ## Why?
 
-[Blog article I wrote about it](https://github.com/neurosnap/blog/blob/master/simplify-testing-async-io-in-javascript.md)
+[Blog article I wrote about it](https://erock.io/simplify-testing-async-io-javascript/)
 
 Maintaining side-effects, especially IO, are difficult to write in javascript.  They are asynchronous,
 they require effort to prevent callback hell, and they can be difficult to test.
