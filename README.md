@@ -53,7 +53,8 @@ react components and the react runtime does the rest.
 * [use-cofx](https://github.com/neurosnap/use-cofx) react hook for cofx
 * [redux-cofx](https://github.com/neurosnap/redux-cofx) side-effect middleware for redux
 * [gen-tester](https://github.com/neurosnap/gen-tester) test cofx generators
-
+* [express-cofx-router](https://github.com/neurosnap/express-cofx-router) express router that supports using cofx generators
+* [redux-router-cofx](https://github.com/neurosnap/redux-router-cofx) activate side-effects with `connected-react-router`
 
 ## How?
 
