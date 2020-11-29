@@ -9,7 +9,7 @@ test('co(* -> yield {}) should aggregate several promises', (t) => {
     const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
 
-    const res = yield {
+    const res: { b: string; c: string } = yield {
       b: b,
       c: c,
     };
@@ -24,7 +24,7 @@ test('co(* -> yield {}) should noop with no args', (t) => {
   t.plan(1);
 
   task(function*() {
-    const res = yield {};
+    const res: object = yield {};
     t.equal(0, Object.keys(res).length);
   });
 });
@@ -44,7 +44,7 @@ test('co(* -> yield {}) should ignore non-thunkable properties', (t) => {
       undefiney: undefined as any,
     };
 
-    const res = yield foo;
+    const res: any = yield foo;
 
     t.equal('tobi', res.name.first);
     t.equal(2, res.age);

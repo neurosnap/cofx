@@ -9,7 +9,7 @@ test('co(* -> yield []) should aggregate several promises', (t) => {
     const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
 
-    const res = yield [b, c];
+    const res: string[] = yield [b, c];
     t.equal(2, res.length);
     t.ok(~res[0].indexOf('MIT'));
     t.ok(~res[1].indexOf('devDependencies'));
@@ -20,7 +20,7 @@ test('co(* -> yield []) should noop with no args', (t) => {
   t.plan(1);
 
   task(function*() {
-    const res = yield [];
+    const res: string[] = yield [];
     t.equal(0, res.length);
   });
 });

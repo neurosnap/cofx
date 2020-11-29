@@ -2,7 +2,7 @@ import { task } from '../src/index';
 import * as test from 'tape';
 
 function sleep(ms: number) {
-  return new Promise((resolve) => {
+  return new Promise<void>((resolve) => {
     setTimeout(() => resolve(), ms);
   });
 }

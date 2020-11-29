@@ -212,7 +212,7 @@ function forkEffect(
   promisify: Promisify,
   cancel: Promise<any>,
 ) {
-  if (Array.isArray) {
+  if (Array.isArray(fn)) {
     return speculation((resolve, reject) => {
       const [obj, fnName] = fn as any[];
       promisify(obj[fnName](...args))
