@@ -13,7 +13,6 @@ import * as test from 'tape';
 import * as nock from 'nock';
 import { genTester, yields } from 'gen-tester';
 
-const noop = (...args: any[]) => {};
 const canceller = (ms: number = 150) =>
   new Promise((resolve) => {
     setTimeout(() => {
@@ -313,7 +312,7 @@ test('race array runtime', (t) => {
     return 2;
   }
   function* go() {
-    const res = yield race([call(one), call(two)]);
+    const res = yield* race([call(one), call(two)]);
     return res;
   }
 
@@ -337,7 +336,7 @@ test('race obj runtime', (t) => {
     return 2;
   }
   function* go() {
-    const res = yield race({
+    const res = yield* race({
       one: call(one),
       two: call(two),
     });
@@ -368,7 +367,7 @@ test('race array cancel', (t) => {
     return 2;
   }
   function* go() {
-    const res = yield race([call(one), call(two)]);
+    const res = yield* race([call(one), call(two)]);
     return res;
   }
 
@@ -395,7 +394,7 @@ test('race obj cancel', (t) => {
     return 2;
   }
   function* go() {
-    const res = yield race({
+    const res = yield* race({
       one: call(one),
       two: call(two),
     });
@@ -434,7 +433,7 @@ test('cancel task race array cancel', (t) => {
 
   function* go() {
     try {
-      const res = yield race([call(one), call(two)]);
+      const res = yield* race([call(one), call(two)]);
       return res;
     } catch (err) {
       t.pass('race should cancel');

@@ -14,8 +14,8 @@
     "build": "tsc",
     "test": "tsc --noEmit && yarn tape",
     "prepublish": "yarn build",
-    "tape": "tape -r ts-node/register --project ./tsconfig.test.json ./test/*.ts | tap-dot",
-    "tape:dev": "tape -r ts-node/register --project ./tsconfig.test.json ./test/*.ts",
+    "tape": "ts-node --project test/tsconfig.json node_modules/.bin/tape ./test/*.ts | tap-dot",
+    "tape:dev": "ts-node --project test/tsconfig.json node_modules/.bin/tape ./test/*.ts",
     "precommit": "lint-staged",
     "prettier": "prettier --write {src,test}/*.{js,ts}"
   },

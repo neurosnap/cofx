@@ -7,7 +7,6 @@ import {
   DelayEffectDescriptor,
   NextFn,
   EffectHandler,
-  AllEffectDescriptor,
   RaceEffectDescriptor,
   SpawnEffectDescriptor,
   SagaGenerator,
@@ -21,29 +20,6 @@ export const typeDetector = (type: string) => (value: any) =>
   value && isObject(value) && value.type === type;
 
 export const CALL = 'CALL';
-
-function rawCall<Fn extends (...args: any[]) => any>(
-  fn: Fn,
-  ...args: Parameters<Fn>
-): CallEffectDescriptor<SagaReturnType<Fn>>;
-function rawCall<
-  Ctx extends { [P in Name]: (this: Ctx, ...args: any[]) => any },
-  Name extends string
->(
-  ctxAndFnName: [Ctx, Name],
-  ...args: Parameters<Ctx[Name]>
-): CallEffectDescriptor<SagaReturnType<Fn>>;
-function rawCall<Fn extends (...args: any[]) => any>(
-  fn: Fn,
-  ...args: Parameters<Fn>
-): CallEffectDescriptor<SagaReturnType<Fn>> {
-  return {
-    type: CALL,
-    fn,
-    args,
-  };
-}
-
 export function call<Fn extends (...args: any[]) => any>(
   fn: Fn,
   ...args: Parameters<Fn>
@@ -62,7 +38,11 @@ export function* call<Fn extends (...args: any[]) => any>(
   fn: Fn,
   ...args: Parameters<Fn>
 ): SagaGenerator<SagaReturnType<Fn>, CallEffectDescriptor<SagaReturnType<Fn>>> {
-  const res: any = yield rawCall(fn, ...args);
+  const res: any = yield {
+    type: CALL,
+    fn,
+    args,
+  };
   return res;
 }
 
@@ -102,22 +82,15 @@ function callEffect<Fn extends (...args: any[]) => any>(
 }
 
 export const ALL = 'ALL';
-function rawAll<T extends { [key: string]: any }>(
-  effects: T,
-): AllEffectDescriptor<T>;
-function rawAll<T>(effects: T[]): AllEffectDescriptor<T> {
-  return {
-    type: ALL,
-    effects,
-  };
-}
-
 export function all<T extends { [key: string]: any }>(
   effects: T,
 ): SagaGenerator<{ [K in keyof T]: EffectReturnType<T[K]> }, any>;
 export function all<T>(effects: T[]): SagaGenerator<EffectReturnType<T>[], any>;
 export function* all(effects: any) {
-  const res: any = yield rawAll(effects);
+  const res: any = yield {
+    type: ALL,
+    effects,
+  };
   return res;
 }
 
@@ -158,15 +131,18 @@ function allEffect(
 }
 
 export const RACE = 'RACE';
-export function race<T>(effects: T[]): RaceEffectDescriptor<T>;
-export function race<T>(effects: { [key: string]: T }): RaceEffectDescriptor<T>;
-export function race<T>(effects: {
-  [key: string]: T;
-}): RaceEffectDescriptor<T> {
-  return {
+export function race<T extends { [key: string]: any }>(
+  effects: T,
+): SagaGenerator<{ [K in keyof T]: EffectReturnType<T[K]> }, any>;
+export function race<T>(
+  effects: T[],
+): SagaGenerator<EffectReturnType<T>[], any>;
+export function* race(effects: any) {
+  const res = yield {
     type: RACE,
     effects,
   };
+  return res;
 }
 
 const isRace = typeDetector(RACE);
@@ -240,6 +216,7 @@ export const fork = (fn: Fn | any[], ...args: any[]) => ({
   fn,
   args,
 });
+
 const isFork = typeDetector(FORK);
 function forkEffect(
   this: any,

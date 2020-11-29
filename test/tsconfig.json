@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "downlevelIteration": true,
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "target": "es6",
+  },
+  "exclude": [
+    "node_modules",
+  ],
+  "include": [
+    "*",
+  ]
+}
