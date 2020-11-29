@@ -5,7 +5,7 @@ import * as test from 'tape';
 test('co(* -> yield []) should aggregate several promises', (t) => {
   t.plan(3);
 
-  task(function*() {
+  task(function* () {
     const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
 
@@ -19,7 +19,7 @@ test('co(* -> yield []) should aggregate several promises', (t) => {
 test('co(* -> yield []) should noop with no args', (t) => {
   t.plan(1);
 
-  task(function*() {
+  task(function* () {
     const res: string[] = yield [];
     t.equal(0, res.length);
   });
@@ -28,9 +28,9 @@ test('co(* -> yield []) should noop with no args', (t) => {
 test('co(* -> yield []) should support an array of generators', (t) => {
   t.plan(1);
 
-  task(function*() {
+  task(function* () {
     const val = yield [
-      (function*() {
+      (function* () {
         return 1;
       })(),
     ];

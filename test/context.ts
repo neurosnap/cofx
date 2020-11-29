@@ -9,7 +9,7 @@ test('co.call(this) should pass the context', (t) => {
   };
 
   // @ts-ignore
-  task.call(ctx, function*(this: any) {
+  task.call(ctx, function* (this: any) {
     t.ok(ctx == this);
   });
 });
@@ -25,16 +25,16 @@ test('call([]) should pass context to a generator', (t) => {
       return Promise.resolve(2);
     }
 
-    * one() {
+    *one() {
       t.ok(ctx == this);
       return yield call<any>([this, 'two']);
     }
   }
 
-  ctx = new GenClass;
+  ctx = new GenClass();
 
   // @ts-ignore
-  task.call(ctx, function*(this: any) {
+  task.call(ctx, function* (this: any) {
     const result = yield call([ctx, 'one']);
     t.ok(result === 2);
   });

@@ -2,7 +2,7 @@ import { task } from '../src/index';
 import * as test from 'tape';
 
 function getPromise(val: any, err?: any) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     if (err) reject(err);
     else resolve(val);
   });
@@ -11,7 +11,7 @@ function getPromise(val: any, err?: any) {
 test('co(* -> yield <promise> with one promise yield', (t) => {
   t.plan(1);
 
-  task(function*() {
+  task(function* () {
     const a = yield getPromise(1);
     t.equal(1, a);
   });
@@ -20,7 +20,7 @@ test('co(* -> yield <promise> with one promise yield', (t) => {
 test('co(* -> yield <promise> with several promise yields', (t) => {
   t.plan(1);
 
-  task(function*() {
+  task(function* () {
     const a = yield getPromise(1);
     const b = yield getPromise(2);
     const c = yield getPromise(3);
@@ -34,7 +34,7 @@ test('co(* -> yield <promise> when a promise is rejected', (t) => {
 
   let error: any;
 
-  task(function*() {
+  task(function* () {
     try {
       yield getPromise(1, new Error('boom'));
     } catch (err) {
@@ -51,8 +51,8 @@ test('co(* -> yield <promise> when yielding a non-standard promise-like', (t) =>
   t.plan(1);
 
   t.ok(
-    task(function*() {
-      yield { then: function() {} };
+    task(function* () {
+      yield { then: function () {} };
     }) instanceof Promise,
   );
 });
@@ -60,9 +60,9 @@ test('co(* -> yield <promise> when yielding a non-standard promise-like', (t) =>
 test('co(function) -> promise', (t) => {
   t.plan(1);
 
-  task(function() {
+  task(function () {
     return 1;
-  }).then(function(data: any) {
+  }).then(function (data: any) {
     t.equal(data, 1);
   });
 });
@@ -70,9 +70,9 @@ test('co(function) -> promise', (t) => {
 test('co(function) -> resolve promise', (t) => {
   t.plan(1);
 
-  task(function() {
+  task(function () {
     return Promise.resolve(1);
-  }).then(function(data: any) {
+  }).then(function (data: any) {
     t.equal(data, 1);
   });
 });
@@ -80,9 +80,9 @@ test('co(function) -> resolve promise', (t) => {
 test('co(function) -> reject promise', (t) => {
   t.plan(1);
 
-  task(function() {
+  task(function () {
     return Promise.reject(1);
-  }).catch(function(data: any) {
+  }).catch(function (data: any) {
     t.equal(data, 1);
   });
 });
@@ -90,13 +90,13 @@ test('co(function) -> reject promise', (t) => {
 test('co(function) -> catch errors', (t) => {
   t.plan(1);
 
-  task(function() {
+  task(function () {
     throw new Error('boom');
   })
-    .then(function() {
+    .then(function () {
       throw new Error('nope');
     })
-    .catch(function(err: any) {
+    .catch(function (err: any) {
       t.equal(err.message, 'boom');
     });
 });

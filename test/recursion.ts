@@ -5,7 +5,7 @@ import * as test from 'tape';
 test('co() recursion should aggregate arrays within arrays', (t) => {
   t.plan(5);
 
-  task(function*() {
+  task(function* () {
     const a = read('prettier.config.js', 'utf8');
     const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
@@ -22,7 +22,7 @@ test('co() recursion should aggregate arrays within arrays', (t) => {
 test('co() recursion should aggregate objects within objects', (t) => {
   t.plan(3);
 
-  task(function*() {
+  task(function* () {
     const a = read('prettier.config.js', 'utf8');
     const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');

@@ -5,7 +5,7 @@ import * as test from 'tape';
 test('co(* -> yield {}) should aggregate several promises', (t) => {
   t.plan(3);
 
-  task(function*() {
+  task(function* () {
     const b = read('LICENSE.md', 'utf8');
     const c = read('package.json', 'utf8');
 
@@ -23,7 +23,7 @@ test('co(* -> yield {}) should aggregate several promises', (t) => {
 test('co(* -> yield {}) should noop with no args', (t) => {
   t.plan(1);
 
-  task(function*() {
+  task(function* () {
     const res: object = yield {};
     t.equal(0, Object.keys(res).length);
   });
@@ -32,7 +32,7 @@ test('co(* -> yield {}) should noop with no args', (t) => {
 test('co(* -> yield {}) should ignore non-thunkable properties', (t) => {
   t.plan(8);
 
-  task(function*() {
+  task(function* () {
     const foo = {
       name: { first: 'tobi' },
       age: 2,
@@ -62,6 +62,6 @@ class Pet {
   something: () => void;
   constructor(name: string) {
     this.name = name;
-    this.something = function() {};
+    this.something = function () {};
   }
 }

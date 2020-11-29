@@ -15,7 +15,7 @@ function* work() {
 test('co(fn*) with a generator function should wrap with co()', (t) => {
   t.plan(4);
 
-  task(function*() {
+  task(function* () {
     const a = yield work;
     const b = yield work;
     const c = yield work;
@@ -32,16 +32,16 @@ test('co(fn*) with a generator function should wrap with co()', (t) => {
 test('co(fn*) with a generator function should catch errors', (t) => {
   t.plan(2);
 
-  task(function*() {
+  task(function* () {
     // @ts-ignore
-    yield function*() {
+    yield function* () {
       throw new Error('boom');
     };
   }).then(
-    function() {
+    function () {
       throw new Error('wtf');
     },
-    function(err: any) {
+    function (err: any) {
       t.ok(err);
       t.ok(err.message == 'boom');
     },

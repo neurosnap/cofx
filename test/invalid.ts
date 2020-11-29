@@ -4,7 +4,7 @@ import * as test from 'tape';
 test('yield <invalid> should throw an error', (t) => {
   t.plan(2);
 
-  task(function*() {
+  task(function* () {
     yield null;
     throw new Error('lol');
   }).catch((err: any) => {

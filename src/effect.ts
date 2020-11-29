@@ -10,6 +10,10 @@ import {
   AllEffectDescriptor,
   RaceEffectDescriptor,
   SpawnEffectDescriptor,
+  SagaGenerator,
+  SagaReturnType,
+  EffectReturnType,
+  AllEffect,
 } from './types';
 import speculation from './speculation';
 
@@ -19,18 +23,18 @@ export const typeDetector = (type: string) => (value: any) =>
 
 export const CALL = 'CALL';
 
-export function call<Fn extends (...args: any[]) => any>(
+function rawCall<Fn extends (...args: any[]) => any>(
   fn: Fn,
   ...args: Parameters<Fn>
 ): CallEffectDescriptor;
-export function call<
+function rawCall<
   Ctx extends { [P in Name]: (this: Ctx, ...args: any[]) => any },
   Name extends string
 >(
   ctxAndFnName: [Ctx, Name],
   ...args: Parameters<Ctx[Name]>
 ): CallEffectDescriptor;
-export function call<Fn extends (...args: any[]) => any>(
+function rawCall<Fn extends (...args: any[]) => any>(
   fn: Fn,
   ...args: Parameters<Fn>
 ): CallEffectDescriptor {
@@ -39,6 +43,25 @@ export function call<Fn extends (...args: any[]) => any>(
     fn,
     args,
   };
+}
+
+export function call<Fn extends (...args: any[]) => any>(
+  fn: Fn,
+  ...args: Parameters<Fn>
+): SagaGenerator<SagaReturnType<Fn>, CallEffectDescriptor>;
+export function call<
+  Ctx extends { [P in Name]: (this: Ctx, ...args: any[]) => any },
+  Name extends string
+>(
+  ctxAndFnName: [Ctx, Name],
+  ...args: Parameters<Ctx[Name]>
+): SagaGenerator<SagaReturnType<Ctx[Name]>, CallEffectDescriptor>;
+export function* call<Fn extends (...args: any[]) => any>(
+  fn: Fn,
+  ...args: Parameters<Fn>
+): SagaGenerator<SagaReturnType<Fn>, CallEffectDescriptor> {
+  const res: any = yield rawCall(fn, ...args);
+  return res;
 }
 
 const isCall = typeDetector(CALL);
@@ -61,9 +84,7 @@ function callEffect<Fn extends (...args: any[]) => any>(
       return resolve(gen);
     }
 
-    promisify(gen, cancel)
-      .then(resolve)
-      .catch(reject);
+    promisify(gen, cancel).then(resolve).catch(reject);
 
     onCancel((msg) => {
       if (typeof gen.next === 'function') {
@@ -79,14 +100,24 @@ function callEffect<Fn extends (...args: any[]) => any>(
 }
 
 export const ALL = 'ALL';
-export function all<T>(effects: T[]): AllEffectDescriptor<T>;
-export function all<T>(effects: { [key: string]: T }): AllEffectDescriptor<T>;
-export function all<T>(effects: { [key: string]: T }): AllEffectDescriptor<T> {
+function rawAll<T>(effects: T[]): AllEffectDescriptor<T>;
+function rawAll<T extends { [key: string]: any }>(
+  effects: T,
+): AllEffectDescriptor<T> {
   return {
     type: ALL,
     effects,
   };
 }
+
+export function all<T>(effects: T[]): SagaGenerator<EffectReturnType<T>[], any>;
+export function* all<T extends { [key: string]: any }>(
+  effects: T,
+): SagaGenerator<{ [K in keyof T]: EffectReturnType<T[K]> }, any> {
+  const res: any = yield rawAll(effects);
+  return res;
+}
+
 const isAll = typeDetector(ALL);
 function allEffect(
   this: any,

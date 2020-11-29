@@ -22,17 +22,15 @@ const canceller = (ms: number = 150) =>
   });
 
 function* genCall() {
-  const resp = yield call(fetch, 'http://httpbin.org/get');
-  const data = yield call([resp, 'json']);
+  const resp = yield* call(fetch, 'http://httpbin.org/get');
+  const data = yield* call([resp, 'json']);
   return { ...data, extra: 'stuff' };
 }
 
 test('task runtime', (t) => {
   const mockData = { one: 2, extra: 'stuff' };
 
-  nock('http://httpbin.org')
-    .get('/get')
-    .reply(200, mockData);
+  nock('http://httpbin.org').get('/get').reply(200, mockData);
 
   t.plan(1);
   const assertData = (data: any) => {
@@ -47,7 +45,7 @@ test('task runtime call generator', (t) => {
     return 'hi';
   }
   function* two() {
-    const val = yield call(one);
+    const val = yield* call(one);
     return val;
   }
 
@@ -76,7 +74,7 @@ test('task runtime call effect normal function', (t) => {
     return 'hi';
   }
   function* two() {
-    const result = yield call(one);
+    const result = yield* call(one);
     return result;
   }
 
@@ -197,10 +195,16 @@ test('call effect', (t) => {
 test('all effect array', (t) => {
   t.plan(1);
 
-  const effectOne = noop;
-  const effectTwo = noop;
+  function* effectOne(p: string) {
+    return `combine ${p}`;
+  }
+
+  function* effectTwo(p: number) {
+    return 40 + p;
+  }
+
   function* genAll() {
-    const res = yield all([call(effectOne, 'one'), call(effectTwo, 'two')]);
+    const res = yield* all([call(effectOne, 'one'), call(effectTwo, 'two')]);
 
     return res;
   }
@@ -217,23 +221,29 @@ test('all effect array', (t) => {
 test('all effect object', (t) => {
   t.plan(1);
 
-  const effectOne = noop;
-  const effectTwo = noop;
+  function* effectOne(p: string) {
+    return `combine ${p}`;
+  }
+
+  function* effectTwo(p: number) {
+    return 40 + p;
+  }
+
   function* genAll() {
-    const res = yield all({
+    const res = yield* all({
       one: call(effectOne, 'one'),
-      two: call(effectTwo, 'two'),
+      two: call(effectTwo, 2),
     });
 
     return res;
   }
-  const allVal = { one: true, two: true };
+  const allVal = { one: 'combine one', two: 42 };
   const tester = genTester(genAll);
   const { actual, expected } = tester(
     yields(
       all({
         one: call(effectOne, 'one'),
-        two: call(effectTwo, 'two'),
+        two: call(effectTwo, 2),
       }),
       allVal,
     ),

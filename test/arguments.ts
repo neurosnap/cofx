@@ -6,7 +6,7 @@ test('co(gen, args) should pass the rest of the arguments', (t) => {
 
   task(
     // @ts-ignore
-    function*(
+    function* (
       num: number,
       str: string,
       arr: any[],
@@ -23,6 +23,6 @@ test('co(gen, args) should pass the rest of the arguments', (t) => {
     'forty-two',
     [42],
     { value: 42 },
-    function() {},
+    function () {},
   );
 });

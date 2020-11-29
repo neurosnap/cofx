@@ -50,3 +50,21 @@ export interface EffectHandler {
   promisify: Promisify;
   cancel: Promise<any>;
 }
+
+export type SagaGenerator<RT, E extends Effect = Effect> = Generator<E, RT>;
+
+export type SagaIterator<RT = any> = Iterator<Effect, RT, any>;
+
+export type SagaReturnType<S extends Function> = S extends (
+  ...args: any[]
+) => SagaIterator<infer RT>
+  ? RT
+  : S extends (...args: any[]) => Promise<infer RT>
+  ? RT
+  : S extends (...args: any[]) => infer RT
+  ? RT
+  : never;
+
+export type EffectReturnType<T> = T extends SagaGenerator<infer RT, any>
+  ? RT
+  : CallEffectDescriptor;
