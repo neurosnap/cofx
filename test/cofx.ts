@@ -204,14 +204,14 @@ test('all effect array', (t) => {
   }
 
   function* genAll() {
-    const res = yield* all([call(effectOne, 'one'), call(effectTwo, 'two')]);
-
+    const res = yield* all([call(effectOne, 'one'), call(effectTwo, 2)]);
     return res;
   }
+
   const allVal = [{ one: true }, { two: true }];
   const tester = genTester(genAll);
   const { actual, expected } = tester(
-    yields(all([call(effectOne, 'one'), call(effectTwo, 'two')])),
+    yields(all([call(effectOne, 'one'), call(effectTwo, 2)])),
     allVal,
   );
 

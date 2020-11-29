@@ -13,7 +13,6 @@ import {
   SagaGenerator,
   SagaReturnType,
   EffectReturnType,
-  AllEffect,
 } from './types';
 import speculation from './speculation';
 
@@ -26,18 +25,18 @@ export const CALL = 'CALL';
 function rawCall<Fn extends (...args: any[]) => any>(
   fn: Fn,
   ...args: Parameters<Fn>
-): CallEffectDescriptor;
+): CallEffectDescriptor<SagaReturnType<Fn>>;
 function rawCall<
   Ctx extends { [P in Name]: (this: Ctx, ...args: any[]) => any },
   Name extends string
 >(
   ctxAndFnName: [Ctx, Name],
   ...args: Parameters<Ctx[Name]>
-): CallEffectDescriptor;
+): CallEffectDescriptor<SagaReturnType<Fn>>;
 function rawCall<Fn extends (...args: any[]) => any>(
   fn: Fn,
   ...args: Parameters<Fn>
-): CallEffectDescriptor {
+): CallEffectDescriptor<SagaReturnType<Fn>> {
   return {
     type: CALL,
     fn,
@@ -48,18 +47,21 @@ function rawCall<Fn extends (...args: any[]) => any>(
 export function call<Fn extends (...args: any[]) => any>(
   fn: Fn,
   ...args: Parameters<Fn>
-): SagaGenerator<SagaReturnType<Fn>, CallEffectDescriptor>;
+): SagaGenerator<SagaReturnType<Fn>, CallEffectDescriptor<SagaReturnType<Fn>>>;
 export function call<
   Ctx extends { [P in Name]: (this: Ctx, ...args: any[]) => any },
   Name extends string
 >(
   ctxAndFnName: [Ctx, Name],
   ...args: Parameters<Ctx[Name]>
-): SagaGenerator<SagaReturnType<Ctx[Name]>, CallEffectDescriptor>;
+): SagaGenerator<
+  SagaReturnType<Ctx[Name]>,
+  CallEffectDescriptor<SagaReturnType<Ctx[Name]>>
+>;
 export function* call<Fn extends (...args: any[]) => any>(
   fn: Fn,
   ...args: Parameters<Fn>
-): SagaGenerator<SagaReturnType<Fn>, CallEffectDescriptor> {
+): SagaGenerator<SagaReturnType<Fn>, CallEffectDescriptor<SagaReturnType<Fn>>> {
   const res: any = yield rawCall(fn, ...args);
   return res;
 }
@@ -100,20 +102,21 @@ function callEffect<Fn extends (...args: any[]) => any>(
 }
 
 export const ALL = 'ALL';
-function rawAll<T>(effects: T[]): AllEffectDescriptor<T>;
 function rawAll<T extends { [key: string]: any }>(
   effects: T,
-): AllEffectDescriptor<T> {
+): AllEffectDescriptor<T>;
+function rawAll<T>(effects: T[]): AllEffectDescriptor<T> {
   return {
     type: ALL,
     effects,
   };
 }
 
-export function all<T>(effects: T[]): SagaGenerator<EffectReturnType<T>[], any>;
-export function* all<T extends { [key: string]: any }>(
+export function all<T extends { [key: string]: any }>(
   effects: T,
-): SagaGenerator<{ [K in keyof T]: EffectReturnType<T[K]> }, any> {
+): SagaGenerator<{ [K in keyof T]: EffectReturnType<T[K]> }, any>;
+export function all<T>(effects: T[]): SagaGenerator<EffectReturnType<T>[], any>;
+export function* all(effects: any) {
   const res: any = yield rawAll(effects);
   return res;
 }
@@ -134,7 +137,7 @@ function allEffect(
   const ctx = this;
 
   if (Array.isArray(effects)) {
-    const mapFn = (effect: Effect) =>
+    const mapFn = (effect: Effect<any>) =>
       effectHandler.call(ctx, { effect, promisify, cancel });
     const eff = effects.map(mapFn);
     return eff;
@@ -165,6 +168,7 @@ export function race<T>(effects: {
     effects,
   };
 }
+
 const isRace = typeDetector(RACE);
 function raceEffect(
   this: any,
@@ -189,7 +193,7 @@ function raceEffect(
   });
 
   if (Array.isArray(effects)) {
-    const mapFn = (effect: Effect) => {
+    const mapFn = (effect: Effect<any>) => {
       return promisify(effectHandler.call(ctx, { effect, promisify, cancel }));
     };
     const eff = effects.map(mapFn);
@@ -342,7 +346,7 @@ export function effectHandler(
 }
 
 export function effectMiddleware(next: NextFn) {
-  return (effect: Effect, promisify: Promisify, cancel: Promise<any>) => {
+  return (effect: Effect<any>, promisify: Promisify, cancel: Promise<any>) => {
     const nextEffect = effectHandler({ effect, promisify, cancel });
     return next(nextEffect);
   };

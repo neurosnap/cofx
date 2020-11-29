@@ -3,14 +3,14 @@ export type GenFn<V = any> = (...args: any[]) => IterableIterator<V>;
 export type CoFn<V = any> = GenFn<V> | Fn;
 
 export type TaskFn<V> = (fn: CoFn<V>, ...args: any[]) => Promise<any>;
-export interface CallEffectDescriptor {
+export interface CallEffectDescriptor<RT = any> {
   type: 'CALL';
-  fn: Fn | any[];
+  fn: (...args: any[]) => SagaIterator<RT> | Promise<RT> | RT;
   args: any[];
 }
-export interface SpawnEffectDescriptor {
+export interface SpawnEffectDescriptor<RT = any> {
   type: 'SPAWN';
-  fn: Fn;
+  fn: (...args: any[]) => SagaIterator<RT> | Promise<RT> | RT;
   args: any[];
 }
 export interface DelayEffectDescriptor {
@@ -18,6 +18,7 @@ export interface DelayEffectDescriptor {
   ms: number;
 }
 
+export type AllEffect<T> = T[] | { [key: string]: T };
 export interface RaceEffectDescriptor<T> {
   type: 'RACE';
   effects: AllEffect<T>;
@@ -26,10 +27,9 @@ export interface AllEffectDescriptor<T> {
   type: 'ALL';
   effects: AllEffect<T>;
 }
-export type AllEffect<T> = T[] | { [key: string]: T };
-export type Effect =
-  | CallEffectDescriptor
-  | SpawnEffectDescriptor
+export type Effect<RT> =
+  | CallEffectDescriptor<RT>
+  | SpawnEffectDescriptor<RT>
   | DelayEffectDescriptor;
 
 export type CombinatorEffect<T> =
@@ -40,7 +40,7 @@ export type Promisify = (p: any, cancel?: Promise<any>) => Promise<any>;
 export type Middleware = (
   next: NextFn,
 ) => (
-  effect: Effect,
+  effect: Effect<any>,
   promisify: Promisify,
   cancelPromise: Promise<any>,
 ) => Middleware;
@@ -51,9 +51,12 @@ export interface EffectHandler {
   cancel: Promise<any>;
 }
 
-export type SagaGenerator<RT, E extends Effect = Effect> = Generator<E, RT>;
+export type SagaGenerator<RT, E extends Effect<any> = Effect<any>> = Generator<
+  E,
+  RT
+>;
 
-export type SagaIterator<RT = any> = Iterator<Effect, RT, any>;
+export type SagaIterator<RT = any> = Iterator<Effect<any>, RT, any>;
 
 export type SagaReturnType<S extends Function> = S extends (
   ...args: any[]
